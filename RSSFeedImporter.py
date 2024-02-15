@@ -1,4 +1,5 @@
 import feedparser
+import os.path
 
 url = "https://www.ivreality.com.ar/feed/"
 feed = feedparser.parse(url)
@@ -27,12 +28,16 @@ def saveEntries(listToSave):
 
 #Carga el archivo y devuelve cada linea en una lista
 def loadFile():
-    file = open("entries.txt","r")
-    lines = file.readlines()
-    for x in range(len(lines)):
-        lines[x] = lines[x].replace("\n","")
-    file.close()
-    return lines
+    if os.path.isfile("./entries.txt"):
+        file = open("entries.txt","r")
+        lines = file.readlines()
+        for x in range(len(lines)):
+            lines[x] = lines[x].replace("\n","")
+        file.close()
+        return lines
+    else:
+        saveEntries([])
+        return []
 
 
 # Esta funcion existe para eliminar un articulo del archivo en caso de fallar el envio

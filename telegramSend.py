@@ -8,7 +8,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder
 
 # Cargo las credenciales a traves de un archivo
-with open('credentials.JSON','r') as jsonFile:
+with open('credentials.json','r') as jsonFile:
 	credentials = json.load(jsonFile)
 myToken = credentials['token']
 channelID = credentials['channelID']
