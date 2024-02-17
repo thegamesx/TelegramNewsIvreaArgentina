@@ -1,5 +1,7 @@
 import feedparser
 import os.path
+import ivreaParser
+import telegramSend
 
 url = "https://www.ivreality.com.ar/feed/"
 feed = feedparser.parse(url)
@@ -20,6 +22,7 @@ def loadArticleFromTitle(title,articles):
         if title==x.title:
             loadArticle = x
     return  loadArticle
+
 def saveEntries(listToSave):
     file = open("entries.txt","w")
     for article in listToSave:

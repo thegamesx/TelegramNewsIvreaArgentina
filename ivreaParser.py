@@ -1,5 +1,7 @@
 import feedparser
 import re
+import itertools
+import convertToMsg
 
 url = "https://www.ivreality.com.ar/feed/"
 feed = feedparser.parse(url)
@@ -54,7 +56,11 @@ def parseTitlesNovedades(body):
 def parseTitlesSalioHoy(body):
 	body = body.split("REEDICIONES")
 	lanzamientos = re.findall(r'>(.*?)</h3>', body[0])
+	for x in range(len(lanzamientos)):
+		lanzamientos[x] = lanzamientos[x].replace("<br />"," ")
 	reediciones = re.findall(r'>(.*?)</h3>', body[1])
+	for x in range(len(reediciones)):
+		reediciones[x] = reediciones[x].replace("<br />"," ")
 	return [lanzamientos,reediciones]
 
 def parseLanzamiento(body):
@@ -64,11 +70,7 @@ def parseLanzamiento(body):
 		bulletpoints[x] = re.sub(r'<.+?>','',bulletpoints[x])
 	while bulletpoints[0]=='':
 		bulletpoints.pop(0)
-	parrafos.pop(0)
-	for x in range(len(parrafos)):
-		parrafos[x] = re.sub(r'<.+?>', '', parrafos[x])
-		parrafos[x] = re.sub(r'&#.+?;', '', parrafos[x])
-	return [bulletpoints,parrafos]
+	return bulletpoints
 
 def parseOtro(body):
 	contenido = body.replace("\n", "")
@@ -76,6 +78,19 @@ def parseOtro(body):
 	contenido = re.sub(r'<.+?>', '', contenido)
 
 	return contenido
+
+def parseResumenAnuncios(body):
+	anuncios = []
+	parrafos = re.findall(r'<p>(.*?)</p>', body)
+	for parrafo in parrafos:
+		anuncios.append(re.findall(r'<strong>(.*?)</strong>', parrafo))
+	anuncios = list(filter(None, anuncios))
+	for x in range(len(anuncios)):
+		for i in range(len(anuncios[x])):
+			anuncios[x][i] = anuncios[x][i].split("&#8211;")
+			anuncios[x][i] = list(filter(None, anuncios[x][i]))
+		anuncios[x] = list(itertools.chain.from_iterable(anuncios[x]))
+	return anuncios
 
 def fetchImage(text):
 	imageURL = re.findall(r'src=\"(.*?)\"', text)
@@ -85,6 +100,10 @@ def fetchImage(text):
 		imageURL = -1
 	return imageURL
 
+def deleteReedicionesFromGroupImgs(list, start):
+	trimmedList = list[:start]
+	return trimmedList
+
 #Devuelve un array con todas las imgs de los mangas que salieron hoy
 def fetchGroupImgs(article):
 	imgs = re.findall(r'src=\"(.*?)\"', article)
@@ -92,7 +111,7 @@ def fetchGroupImgs(article):
 
 #Para darle formato a las novedades, vamos a poner el titulo, link, y cada manga que sale en una lista
 def formatNovedades(entry):
-	tipo = "Novedades"
+	tipo = "Photo"
 	titulo = entry.title
 	link = entry.link
 	imagen = fetchImage(entry.content[0]['value'])
@@ -101,16 +120,16 @@ def formatNovedades(entry):
 	return listaFinal
 
 def formatSalioHoy(entry):
-	tipo = "SalioHoy"
+	tipo = "GroupPhoto"
 	titulo = entry.title
 	link = entry.link
-	imagenes = fetchGroupImgs(entry.content[0]['value'])
 	contenido = parseTitlesSalioHoy(entry.content[0]['value'])
+	imagenes = deleteReedicionesFromGroupImgs(fetchGroupImgs(entry.content[0]['value']),len(contenido[0]))
 	listaFinal = [tipo,titulo,link,imagenes,contenido]
 	return listaFinal
 
 def formatLanzamiento(entry):
-	tipo = "Lanzamiento"
+	tipo = "Photo"
 	titulo = entry.title
 	link = entry.link
 	imagen = fetchImage(entry.content[0]['value'])
@@ -118,8 +137,19 @@ def formatLanzamiento(entry):
 	listaFinal = [tipo, titulo, link, imagen, contenido]
 	return listaFinal
 
+def formatResumenAnuncios(entry):
+	tipo = "GroupPhoto"
+	titulo = entry.title
+	link = entry.link
+	contenido = parseResumenAnuncios(entry.content[0]['value'])
+	imagenes = fetchGroupImgs(entry.content[0]['value'])
+	if len(imagenes)<len(contenido):
+		contenido = contenido[:len(imagenes)]
+	listaFinal = [tipo, titulo, link, imagenes, contenido]
+	return listaFinal
+
 def formatOtro(entry):
-	tipo = "Otro"
+	tipo = "PhotoOrImage"
 	titulo = entry.title
 	link = entry.link
 	imagen = fetchImage(entry.content[0]['value'])
@@ -137,18 +167,28 @@ def checkTypeArticle(titulo):
 		return "SalioHoy"
 	elif "ivrea publicará" in titulo.casefold():
 		return "Lanzamiento"
+	elif "resumen de" in titulo.casefold():
+		return "Resumen"
 	else:
 		return "Otro"
 
 def parseArticle(entry):
 	articleType = checkTypeArticle(entry.title)
-	if articleType == "Novedades":
-		articulo = formatNovedades(entry)
-	if articleType == "SalioHoy":
-		articulo = formatSalioHoy(entry)
-	if articleType == "Lanzamiento":
-		articulo = formatLanzamiento(entry)
-	if articleType == "Otro":
-		articulo = formatOtro(entry)
-
+	match articleType:
+		case "Novedades":
+			articulo = formatNovedades(entry)
+			msg = convertToMsg.msgNovedades(articulo[1],articulo[2],articulo[4])
+		case "SalioHoy":
+			articulo = formatSalioHoy(entry)
+			msg = convertToMsg.msgSalioHoy(articulo[1],articulo[2],articulo[4])
+		case "Lanzamiento":
+			articulo = formatLanzamiento(entry)
+			msg = convertToMsg.msgLanzamiento(articulo[1],articulo[2],articulo[4])
+		case "Resumen":
+			articulo = formatResumenAnuncios(entry)
+			msg = convertToMsg.msgResumen(articulo[1],articulo[2],articulo[4])
+		case "Otro":
+			articulo = formatOtro(entry)
+			msg = convertToMsg.msgOtro(articulo[1],articulo[2],articulo[4])
+	articulo.append(msg)
 	return articulo

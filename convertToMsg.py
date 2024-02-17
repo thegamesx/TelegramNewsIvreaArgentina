@@ -98,11 +98,33 @@ def msgLanzamiento(title, link, bulletpoints):
 
     return msg
 
+def msgResumen(title, link, content):
+    # Inserta el título
+    msg = "<b>" + title + "</b>"
+    # Inserta 2 saltos de linea
+    msg += lineBreak + lineBreak
+    for newManga in content:
+        # Primero sabemos que el primero siempre es el titulo, asi que insertamos eso
+        msg += "\U0001F4D6" + " <b>" + newManga[0] + "</b>" + lineBreak
+        for linea in newManga[1:]:
+        # El segundo deberia ser el formato, pero chequeamos por las dudas
+            if "formato " in linea.casefold():
+                emoji = "\U0001F4C4"  # Hoja (Formato)
+            elif "a la venta" in linea.casefold():
+                emoji = "\u23F0" #Reloj despertador (Lanzamiento)
+            else:
+                emoji = "\u2705"  # Tick (otro)
+            msg += emoji + linea + lineBreak
+        msg += lineBreak
+    # Por ultimo, insertamos el link
+    msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
+    return msg
+
 def msgOtro(title, link, content):
     # Inserta el título
     msg = "<b>" + title + "</b>"
-    # Inserta 1 salto de linea
-    msg += lineBreak
+    # Inserta 2 salto de linea
+    msg += lineBreak + lineBreak
     # Inserta el contenido
     msg+= content + lineBreak
     # Por ultimo, insertamos el link

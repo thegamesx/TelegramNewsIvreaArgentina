@@ -1,19 +1,26 @@
 import time
-from RSSFeedImporter import checkForNewTitleEntries,deleteEntryFromFile
+from RSSFeedImporter import checkForNewTitleEntries,deleteEntryFromFile,loadFeed
 from telegramSend import sendPost
 from ivreaParser import parseArticle
 import schedule
 import logging
+import json
 
 #Crea un archivo para el logging
 logging.basicConfig(filename="logging.log", encoding="utf-8",level=logging.DEBUG)
+
+# Cargo la configuracion a traves de un archivo
+with open('conf.json','r') as jsonFile:
+	conf = json.load(jsonFile)
+intervalHours = conf['intervalHours']
 
 def checkForNewAndSend():
     newPosts = checkForNewTitleEntries()
     if newPosts:
         for article in newPosts:
             try:
-                sendPost(parseArticle(article))
+                articleToSend = parseArticle(article)
+                sendPost(articleToSend[0],articleToSend[5],articleToSend[3])
                 logging.info("Se envió " + article.title)
             except:
                 logging.error("Falló el envió de " + article.title)
@@ -24,11 +31,17 @@ def checkForNewAndSend():
     else:
         logging.info("Se ejecutó el programa. No hay nuevos articulos.")
 
-schedule.every(3).hours.do(checkForNewAndSend)
+schedule.every(intervalHours).hours.do(checkForNewAndSend)
+
+def test(articleNumber):
+    feed = loadFeed()
+    articleToSend = parseArticle(feed[articleNumber])
+    sendPost(articleToSend[0],articleToSend[5],articleToSend[3])
 
 if __name__ == "__main__":
-    #Ejecutamos el query al arrancar el programa, y luego lo hacemos cada 3hs
+    #Ejecutamos el query al arrancar el programa, y luego lo hacemos cada x hs
     checkForNewAndSend()
     while True:
         schedule.run_pending()
         time.sleep(1)
+
