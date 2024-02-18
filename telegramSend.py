@@ -32,6 +32,9 @@ def deleteTemp():
 def downloadMedia(imgURL):
 	name = imgURL.split('/')
 	name = name[-1]
+	# Me aseguro que exista la carpeta antes de usarla
+	if not os.path.exists("./.temp/"):
+		os.makedirs("./.temp/")
 	name = "./.temp/" + name
 	urllib.request.urlretrieve(imgURL, name)
 	return name
