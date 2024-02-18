@@ -22,9 +22,9 @@ def checkForNewAndSend():
                 articleToSend = parseArticle(article)
                 sendPost(articleToSend[0],articleToSend[5],articleToSend[3])
                 logging.info("Se envió " + article.title)
-            except:
-                logging.error("Falló el envió de " + article.title)
-                if deleteEntryFromFile(article.title)==0:
+            except Exception as error:
+                logging.error("Falló el envió de " + article.title + " El error fue el siguiente:\n",error)
+                if deleteEntryFromFile(article.title):
                     logging.info("Se eliminó " + article.title + " del registro. Se volverá a intentar en el próximo schedule")
                 else:
                     logging.error("No se eliminó " + article.title + "del registro. Revisar manualmente.")
@@ -44,4 +44,3 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
-

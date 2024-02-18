@@ -50,8 +50,8 @@ def deleteEntryFromFile(entryTitle):
         if entryTitle in file[x]:
             file.pop(x)
             saveEntries(file)
-            return 0
-    return -1
+            return True
+    return False
 
 #Este es la función principal, la cual va a devolver nuevas entradas (si las hay) para procesarlas luego
 def checkForNewTitleEntries():

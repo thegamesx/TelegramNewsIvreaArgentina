@@ -6,6 +6,11 @@ import convertToMsg
 url = "https://www.ivreality.com.ar/feed/"
 feed = feedparser.parse(url)
 
+def stripHTML(text):
+	returnText = re.sub(r"<br(.*?)>",' ',text)
+	returnText = re.sub(r'<.+?>', '', returnText)
+	return returnText
+
 #En los articulos que muestran que salió hoy, rescatamos los titulos en forma de lista, con sus respectivos subtitulos
 def parseTitlesNovedades(body):
 	titleList = []
@@ -17,7 +22,7 @@ def parseTitlesNovedades(body):
 		if title != []:
 			if type(title) is list:
 				title = title[0]
-			title = re.sub(r'<.+?>','',title)
+			title = stripHTML(title)
 			title = title.replace("&#8221;", "\"")
 			if title[0]=="•":
 				title = title[2:]
@@ -57,19 +62,18 @@ def parseTitlesSalioHoy(body):
 	body = body.split("REEDICIONES")
 	lanzamientos = re.findall(r'>(.*?)</h3>', body[0])
 	for x in range(len(lanzamientos)):
-		lanzamientos[x] = lanzamientos[x].replace("<br />"," ")
+		lanzamientos[x] = stripHTML(lanzamientos[x])
 	reediciones = re.findall(r'>(.*?)</h3>', body[1])
 	for x in range(len(reediciones)):
-		reediciones[x] = reediciones[x].replace("<br />"," ")
+		reediciones[x] = stripHTML(reediciones[x])
 	return [lanzamientos,reediciones]
 
 def parseLanzamiento(body):
 	parrafos = re.findall(r'<p>(.*?)</p>', body)
 	bulletpoints = parrafos[0].split("<br />")
 	for x in range(len(bulletpoints)):
-		bulletpoints[x] = re.sub(r'<.+?>','',bulletpoints[x])
-	while bulletpoints[0]=='':
-		bulletpoints.pop(0)
+		bulletpoints[x] = stripHTML(bulletpoints[x])
+	bulletpoints = list(filter(None, bulletpoints))
 	return bulletpoints
 
 def parseOtro(body):

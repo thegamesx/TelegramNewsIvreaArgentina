@@ -1,11 +1,11 @@
-import ivreaParser
-import convertToMsg
 import json
 import asyncio
 import logging
 import telegram
+import os
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder
+import urllib.request
 
 # Cargo las credenciales a traves de un archivo
 with open('credentials.json','r') as jsonFile:
@@ -21,6 +21,20 @@ logging.basicConfig(
 	level=logging.INFO
 )
 
+#Borra los archivos descargados luego de mandarlos
+def deleteTemp():
+	for root, dirs, files in os.walk('./.temp'):
+		for file in files:
+			if file.endswith('.jpg'):
+				os.remove(os.path.join(root, file))
+
+# En caso de que falle en mandar por un problema de tipo de archivo, vamos a descargar el archivo en vez de mandarlo por URL
+def downloadMedia(imgURL):
+	name = imgURL.split('/')
+	name = name[-1]
+	name = "./.temp/" + name
+	urllib.request.urlretrieve(imgURL, name)
+	return name
 
 # Arregla los links para poder enviarlos como grupo
 def prepareMedia(list,msg):
@@ -36,16 +50,25 @@ def prepareMedia(list,msg):
 			firstElement=False
 	return correctList
 
-
 # Envia una foto con un caption. Se puede usar para lanzamientos, anuncios u otros que tengan una foto.
 async def sendPhoto(app, chat, msg, img):
 	if len(msg) <= 1024:
-		await app.bot.sendPhoto(
-			chat_id=chat,
-			photo=img,
-			caption=msg,
-			parse_mode=ParseMode.HTML
-		)
+		try:
+			await app.bot.sendPhoto(
+				chat_id=chat,
+				photo=img,
+				caption=msg,
+				parse_mode=ParseMode.HTML
+			)
+		except:
+			downloadedImg = downloadMedia(img)
+			await app.bot.sendPhoto(
+				chat_id=chat,
+				photo=downloadedImg,
+				caption=msg,
+				parse_mode=ParseMode.HTML
+			)
+			deleteTemp()
 	else:
 		await app.bot.sendPhoto(
 			chat_id=chat,
