@@ -1,5 +1,5 @@
 import time
-from RSSFeedImporter import checkForNewTitleEntries,deleteEntryFromFile,loadFeed
+from RSSFeedImporter import checkForNewEntries,deleteEntryFromFile,loadFeed
 from telegramSend import sendPost
 from ivreaParser import parseArticle
 import schedule
@@ -15,7 +15,7 @@ with open('conf.json','r') as jsonFile:
 intervalHours = conf['intervalHours']
 
 def checkForNewAndSend():
-    newPosts = checkForNewTitleEntries()
+    newPosts = checkForNewEntries()
     if newPosts:
         for article in newPosts:
             try:

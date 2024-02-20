@@ -1,27 +1,25 @@
 import feedparser
 import os.path
-import ivreaParser
-import telegramSend
 
 url = "https://www.ivreality.com.ar/feed/"
-feed = feedparser.parse(url)
 
 def loadFeed():
+    feed = feedparser.parse(url)
     listOfArticles = feed.entries
     return listOfArticles
 
-def getArticlesTitles(articles):
-    titleList = []
+def getArticlesID(articles):
+    IDList = []
     for entry in articles:
-        titleList.append(entry.title)
-    return titleList
+        IDList.append(entry.id)
+    return IDList
 
-def loadArticleFromTitle(title,articles):
+def loadArticleFromID(ID,articles):
     loadArticle = -1
     for x in articles:
-        if title==x.title:
+        if ID==x.id:
             loadArticle = x
-    return  loadArticle
+    return loadArticle
 
 def saveEntries(listToSave):
     file = open("entries.txt","w")
@@ -54,17 +52,17 @@ def deleteEntryFromFile(entryTitle):
     return False
 
 #Este es la función principal, la cual va a devolver nuevas entradas (si las hay) para procesarlas luego
-def checkForNewTitleEntries():
+def checkForNewEntries():
     articles = loadFeed()
-    currentEntries = getArticlesTitles(articles)
+    currentEntries = getArticlesID(articles)
     savedEntries = loadFile()
-    newTitleEntries = []
+    newEntries = []
     newEntryList = []
     for article in currentEntries:
         if not article in savedEntries:
-            newTitleEntries.append(article)
-    for entry in newTitleEntries:
-        newEntryList.append(loadArticleFromTitle(entry,articles))
+            newEntries.append(article)
+    for entry in newEntries:
+        newEntryList.append(loadArticleFromID(entry,articles))
     if newEntryList != []:
         saveEntries(currentEntries)
         return reversed(newEntryList)

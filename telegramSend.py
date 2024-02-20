@@ -97,6 +97,7 @@ async def sendMessageOrPhoto(app, chat, msg, img):
 
 
 # Envia lo que salió hoy. Primero manda un grupo con las fotos de los mangas, y luego el detalle en un mensaje
+# Ver si es necesario descargar las imgs en caso de error
 async def sendGroupPhoto(app, chat, msg, imgs):
 	correctImgs = prepareMedia(imgs,msg)
 	#Envia grupos de a 10 imagenes
