@@ -68,3 +68,4 @@ def checkForNewEntries():
         return reversed(newEntryList)
     else:
         return False
+
