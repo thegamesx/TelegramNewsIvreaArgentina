@@ -40,16 +40,22 @@ def downloadMedia(imgURL):
 	return name
 
 # Arregla los links para poder enviarlos como grupo
-def prepareMedia(list,msg):
+def prepareMedia(list,msg,download=False):
 	correctList = []
 	firstElement = True
 	#Aca agregamos un caption al primer elemento, ademas de acomodar las fotos. Se hace solo si recibimos un msg para agregar o si el msg es muy largo
 	if msg == -1 or len(msg)>1024:
 		for img in list:
-			correctList.append(telegram.InputMediaPhoto(media=img))
+			if download==True:
+				correctList.append(telegram.InputMediaPhoto(media=(open(downloadMedia(img),'rb'))))
+			else:
+				correctList.append(telegram.InputMediaPhoto(media=img))
 	else:
 		for img in list:
-			correctList.append(telegram.InputMediaPhoto(media=img,caption = msg if firstElement else '',parse_mode=ParseMode.HTML))
+			if download==True:
+				correctList.append(telegram.InputMediaPhoto(media=(open(downloadMedia(img),'rb')), caption=msg if firstElement else '', parse_mode=ParseMode.HTML))
+			else:
+				correctList.append(telegram.InputMediaPhoto(media=img,caption = msg if firstElement else '',parse_mode=ParseMode.HTML))
 			firstElement=False
 	return correctList
 
@@ -97,9 +103,9 @@ async def sendMessageOrPhoto(app, chat, msg, img):
 
 
 # Envia lo que salió hoy. Primero manda un grupo con las fotos de los mangas, y luego el detalle en un mensaje
-# Ver si es necesario descargar las imgs en caso de error
 async def sendGroupPhoto(app, chat, msg, imgs):
-	correctImgs = prepareMedia(imgs,msg)
+	#Vamos a defaultear a descargar las imgs, por las dudas. Cambiar esto en un futuro para que sea opcional
+	correctImgs = prepareMedia(imgs,msg,download=True)
 	#Envia grupos de a 10 imagenes
 	while len(correctImgs) > 10:
 		await app.bot.sendMediaGroup(
@@ -119,6 +125,7 @@ async def sendGroupPhoto(app, chat, msg, imgs):
 			text=msg,
 			parse_mode=ParseMode.HTML
 	)
+	deleteTemp()
 
 #Inicializa el bot
 def initBot():
