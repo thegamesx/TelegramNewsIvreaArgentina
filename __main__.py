@@ -1,5 +1,5 @@
 import time
-from RSSFeedImporter import checkForNewEntries, deleteEntryFromFile, loadFeed
+from RSSFeedImporter import checkForNewEntries, deleteEntryFromFile
 from telegramSend import sendPost
 from ivreaParser import parseArticle
 import schedule
@@ -9,12 +9,13 @@ import json
 # Crea un archivo para el logging
 logging.basicConfig(filename="logging.log", encoding="utf-8", level=logging.DEBUG)
 
-# Cargo la configuracion a traves de un archivo
+# Cargo la configuración a través de un archivo
 with open('conf.json', 'r') as jsonFile:
     conf = json.load(jsonFile)
 intervalHours = conf['intervalHours']
 
 
+# Revisa si hay artículos nuevos. Si los hay los manda, y chequea que funcione correctamente
 def checkForNewAndSend():
     newPosts = checkForNewEntries()
     if newPosts:
@@ -31,7 +32,7 @@ def checkForNewAndSend():
                 else:
                     logging.error("No se eliminó " + article.title + "del registro. Revisar manualmente.")
     else:
-        logging.info("Se ejecutó el programa. No hay nuevos articulos.")
+        logging.info("Se ejecutó el programa. No hay nuevos artículos.")
 
 
 schedule.every(intervalHours).hours.do(checkForNewAndSend)
