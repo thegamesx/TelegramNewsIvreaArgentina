@@ -6,6 +6,7 @@ import convertToMsg
 def stripHTML(text):
     returnText = re.sub(r"<br(.*?)>", ' ', text)
     returnText = re.sub(r'<.+?>', '', returnText)
+    returnText = returnText.replace("&nbsp;"," ")
     return returnText
 
 
@@ -31,10 +32,10 @@ def parseTitlesNovedades(body):
 # Para recuperar los titulos que salieron hoy, solo vamos a concentrarnos en los titulos. (considerar los subs)
 def parseTitlesSalioHoy(body):
     body = body.split("REEDICIONES")
-    lanzamientos = re.findall(r'>(.*?)</h3>', body[0])
+    lanzamientos = re.findall(r'>(.*?)</h\d>', body[0])
     for x in range(len(lanzamientos)):
         lanzamientos[x] = stripHTML(lanzamientos[x])
-    reediciones = re.findall(r'>(.*?)</h3>', body[1])
+    reediciones = re.findall(r'>(.*?)</h\d>', body[1])
     for x in range(len(reediciones)):
         reediciones[x] = stripHTML(reediciones[x])
     return [lanzamientos, reediciones]
@@ -48,7 +49,8 @@ def parseLanzamiento(body):
     bulletpoints = list(filter(None, bulletpoints))
     return bulletpoints
 
-#Tomamos el primer parrafo del texto.
+
+# Tomamos el primer parrafo del texto.
 def parseOtro(body):
     contenido = re.findall(r'<p>(.*?)</p>', body)[0]
     contenido = stripHTML(contenido)
@@ -95,7 +97,15 @@ def formatNovedades(entry):
     tipo = "Photo"
     titulo = entry.title
     link = entry.link
-    imagen = fetchImage(entry.content[0]['value'])
+    imagen = fetchGroupImgs(entry.content[0]['value'])
+    # Puede que hayan multiples imagenes. En ese caso vemos si son más de una (ignorando reediciones) y categorizamos
+    # el post segun corresponda
+    if len(imagen) > 1:
+        imagen = imagen[:-1]
+    if len(imagen) == 1:
+        imagen = imagen[0]
+    else:
+        tipo = "GroupPhoto"
     contenido = parseTitlesNovedades(entry.content[0]['value'])
     listaFinal = [tipo, titulo, link, imagen, contenido]
     return listaFinal

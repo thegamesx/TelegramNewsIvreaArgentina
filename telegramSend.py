@@ -1,6 +1,7 @@
 import json
 import asyncio
 import logging
+from time import sleep
 import telegram
 import os
 from telegram.constants import ParseMode
@@ -44,27 +45,30 @@ def downloadMedia(imgURL):
 
 
 # Arregla los links para poder enviarlos como grupo
-def prepareMedia(mediaList, msg, download=False):
+def prepareMedia(mediaList, message=-1, download=False):
     correctList = []
-    firstElement = True
     # Aca agregamos un caption al primer elemento, ademas de acomodar las fotos. Se hace solo si recibimos un msg
     # para agregar o si el msg es muy largo
-    if msg == -1 or len(msg) > 1024:
+    if message == -1 or len(message) > 1024:
         for img in mediaList:
             if download:
                 correctList.append(telegram.InputMediaPhoto(media=(open(downloadMedia(img), 'rb'))))
             else:
                 correctList.append(telegram.InputMediaPhoto(media=img))
     else:
-        for img in mediaList:
+        if len(mediaList) > 10:
+            positionForCaption = len(mediaList) - 9
+        else:
+            positionForCaption = 1
+        for i, img in enumerate(mediaList, start=1):
             if download:
                 correctList.append(telegram.InputMediaPhoto(media=(open(downloadMedia(img), 'rb')),
-                                                            caption=msg if firstElement else '',
+                                                            caption=message if i == positionForCaption else '',
                                                             parse_mode=ParseMode.HTML))
             else:
                 correctList.append(
-                    telegram.InputMediaPhoto(media=img, caption=msg if firstElement else '', parse_mode=ParseMode.HTML))
-            firstElement = False
+                    telegram.InputMediaPhoto(media=img, caption=message if i == positionForCaption else '',
+                                             parse_mode=ParseMode.HTML))
     return correctList
 
 
@@ -119,11 +123,16 @@ async def sendGroupPhoto(app, chat, msg, imgs):
     correctImgs = prepareMedia(imgs, msg, download=True)
     # Envia grupos de a 10 imagenes
     while len(correctImgs) > 10:
+        if len(correctImgs) % 10 != 0:
+            limit = len(correctImgs) % 10
+        else:
+            limit = 10
         await app.bot.sendMediaGroup(
             chat_id=chat,
-            media=correctImgs[10:],
+            media=correctImgs[:limit],
         )
-        correctImgs = correctImgs[:10]
+        correctImgs = correctImgs[limit:]
+        sleep(3)
     else:
         await app.bot.sendMediaGroup(
             chat_id=chat,
