@@ -14,7 +14,7 @@ def stripHTML(text):
 def parseTitlesNovedades(body):
     titleList = []
     parsedBody = re.findall(r'<li>(.*?)</li>', body)
-    if parsedBody == []:
+    if not parsedBody:
         parsedBody = re.findall(r'<p>(.*?)</p>', body)
     for x in range(len(parsedBody)):
         title = re.findall(r'<strong>(.*?)</strong>', parsedBody[x])
@@ -35,9 +35,12 @@ def parseTitlesSalioHoy(body):
     lanzamientos = re.findall(r'>(.*?)</h\d>', body[0])
     for x in range(len(lanzamientos)):
         lanzamientos[x] = stripHTML(lanzamientos[x])
-    reediciones = re.findall(r'>(.*?)</h\d>', body[1])
-    for x in range(len(reediciones)):
-        reediciones[x] = stripHTML(reediciones[x])
+    try:
+        reediciones = re.findall(r'>(.*?)</h\d>', body[1])
+        for x in range(len(reediciones)):
+            reediciones[x] = stripHTML(reediciones[x])
+    except:
+        reediciones = None
     return [lanzamientos, reediciones]
 
 
@@ -74,7 +77,7 @@ def parseResumenAnuncios(body):
 
 def fetchImage(text):
     imageURL = re.findall(r'src=\"(.*?)\"', text)
-    if imageURL != []:
+    if imageURL:
         imageURL = imageURL[0]
     else:
         imageURL = -1
@@ -97,16 +100,16 @@ def formatNovedades(entry):
     tipo = "Photo"
     titulo = entry.title
     link = entry.link
+    contenido = parseTitlesNovedades(entry.content[0]['value'])
     imagen = fetchGroupImgs(entry.content[0]['value'])
     # Puede que hayan multiples imagenes. En ese caso vemos si son más de una (ignorando reediciones) y categorizamos
     # el post segun corresponda
-    if len(imagen) > 1:
+    if len(imagen) > 1 and any("(reedición)" in titulo.casefold() for titulo in contenido):
         imagen = imagen[:-1]
     if len(imagen) == 1:
         imagen = imagen[0]
     else:
         tipo = "GroupPhoto"
-    contenido = parseTitlesNovedades(entry.content[0]['value'])
     listaFinal = [tipo, titulo, link, imagen, contenido]
     return listaFinal
 

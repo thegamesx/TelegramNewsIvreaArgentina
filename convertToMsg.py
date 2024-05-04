@@ -32,10 +32,11 @@ def msgSalioHoy(title, link, content):
     # Inserta los titulos
     for manga in content[0]:
         msg += "\U0001F4D6" + " " + manga + lineBreak
-    # Separamos las reediciones
-    msg += lineBreak + "<b>REEDICIONES</b>" + lineBreak + lineBreak
-    for manga in content[1]:
-        msg += "\U0001F504" + " " + manga + lineBreak
+    # Separamos las reediciones, si las hay
+    if content[1]:
+        msg += lineBreak + "<b>REEDICIONES</b>" + lineBreak + lineBreak
+        for manga in content[1]:
+            msg += "\U0001F504" + " " + manga + lineBreak
     # Por ultimo, insertamos el link
     msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
 
@@ -67,7 +68,12 @@ def msgLanzamiento(title, link, bulletpoints):
         elif "a la venta" in linea.casefold() or "salida" in linea.casefold():
             emoji = "\u23F0"  # Reloj despertador (Lanzamiento)
         # Considerar cambiar esto
-        elif "shonen" == linea.casefold() or "seinen" == linea.casefold() or "shojo" == linea.casefold() or "bl/yaoi" == linea.casefold() or "josei" == linea.casefold() or "yuri" == linea.casefold():
+        elif ("shonen" == linea.casefold() or
+              "seinen" == linea.casefold() or
+              "shojo" == linea.casefold() or
+              "bl/yaoi" == linea.casefold() or
+              "josei" == linea.casefold() or
+              "yuri" == linea.casefold()):
             emoji = "\U0001F468\u200D\U0001F469\u200D\U0001F467\u200D\U0001F466"  # Familia (genero)
         else:
             emoji = "\u2705"  # Tick (otro)
