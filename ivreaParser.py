@@ -171,6 +171,7 @@ def checkTypeArticle(titulo):
 
 def parseArticle(entry):
     articleType = checkTypeArticle(entry.title)
+    # TODO: Hacer que el articulo sea un clase en vez de una lista, asi es más intuitivo que se está usando
     match articleType:
         case "Novedades":
             articulo = formatNovedades(entry)

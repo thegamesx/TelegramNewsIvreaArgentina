@@ -30,7 +30,8 @@ def checkForNewAndSend():
                     logging.info(
                         "Se eliminó " + article.title + " del registro. Se volverá a intentar en el próximo schedule")
                 else:
-                    logging.error("No se eliminó " + article.title + "del registro. Revisar manualmente.")
+                    # TODO: Reimplementar esto, no funciona actualmente
+                    logging.error("No se eliminó " + article.title + " del registro. Revisar manualmente.")
     else:
         logging.info("Se ejecutó el programa. No hay nuevos artículos.")
 
