@@ -34,14 +34,13 @@ def deleteTemp():
 # En caso de que falle en mandar por un problema de tipo de archivo, vamos a descargar el archivo en vez de mandarlo
 # por URL
 def downloadMedia(imgURL):
-    name = imgURL.split('/')
-    name = name[-1]
+    localPath = "./.temp/" + imgURL.split('/')[-1]
     # Me aseguro que exista la carpeta antes de usarla
     if not os.path.exists("./.temp/"):
         os.makedirs("./.temp/")
-    name = "./.temp/" + name
-    urllib.request.urlretrieve(imgURL, name)
-    return name
+    parsedURL = "https://" + urllib.parse.quote(imgURL[8:])
+    urllib.request.urlretrieve(parsedURL, localPath)
+    return localPath
 
 
 # Arregla los links para poder enviarlos como grupo
