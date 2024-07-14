@@ -102,15 +102,21 @@ def formatNovedades(entry):
     link = entry.link
     contenido = parseTitlesNovedades(entry.content[0]['value'])
     imagen = fetchGroupImgs(entry.content[0]['value'])
-    # Puede que hayan multiples imagenes. En ese caso vemos si son más de una (ignorando reediciones) y categorizamos
-    # el post segun corresponda
+    # Puede que hayan multiples imágenes. En ese caso vemos si son más de una (ignorando reediciones) y categorizamos
+    # el post según corresponda
     if len(imagen) > 1 and any("(reedición)" in titulo.casefold() for titulo in contenido):
         imagen = imagen[:-1]
     if len(imagen) == 1:
         imagen = imagen[0]
     else:
         tipo = "GroupPhoto"
-    listaFinal = [tipo, titulo, link, imagen, contenido]
+    listaFinal = {
+        "tipo": tipo,
+        "titulo": titulo,
+        "link": link,
+        "media": imagen,
+        "contenido": contenido
+    }
     return listaFinal
 
 
@@ -120,7 +126,13 @@ def formatSalioHoy(entry):
     link = entry.link
     contenido = parseTitlesSalioHoy(entry.content[0]['value'])
     imagenes = deleteReedicionesFromGroupImgs(fetchGroupImgs(entry.content[0]['value']), len(contenido[0]))
-    listaFinal = [tipo, titulo, link, imagenes, contenido]
+    listaFinal = {
+        "tipo": tipo,
+        "titulo": titulo,
+        "link": link,
+        "media": imagenes,
+        "contenido": contenido
+    }
     return listaFinal
 
 
@@ -130,7 +142,13 @@ def formatLanzamiento(entry):
     link = entry.link
     imagen = fetchImage(entry.content[0]['value'])
     contenido = parseLanzamiento(entry.content[0]['value'])
-    listaFinal = [tipo, titulo, link, imagen, contenido]
+    listaFinal = {
+        "tipo": tipo,
+        "titulo": titulo,
+        "link": link,
+        "media": imagen,
+        "contenido": contenido
+    }
     return listaFinal
 
 
@@ -142,7 +160,13 @@ def formatResumenAnuncios(entry):
     imagenes = fetchGroupImgs(entry.content[0]['value'])
     if len(imagenes) < len(contenido):
         contenido = contenido[:len(imagenes)]
-    listaFinal = [tipo, titulo, link, imagenes, contenido]
+    listaFinal = {
+        "tipo": tipo,
+        "titulo": titulo,
+        "link": link,
+        "media": imagenes,
+        "contenido": contenido
+    }
     return listaFinal
 
 
@@ -152,7 +176,13 @@ def formatOtro(entry):
     link = entry.link
     imagen = fetchImage(entry.content[0]['value'])
     resumen = parseOtro(entry.content[0]['value'])
-    listaFinal = [tipo, titulo, link, imagen, resumen]
+    listaFinal = {
+        "tipo": tipo,
+        "titulo": titulo,
+        "link": link,
+        "media": imagen,
+        "contenido": resumen
+    }
     return listaFinal
 
 
@@ -175,18 +205,18 @@ def parseArticle(entry):
     match articleType:
         case "Novedades":
             articulo = formatNovedades(entry)
-            msg = convertToMsg.msgNovedades(articulo[1], articulo[2], articulo[4])
+            msg = convertToMsg.msgNovedades(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "SalioHoy":
             articulo = formatSalioHoy(entry)
-            msg = convertToMsg.msgSalioHoy(articulo[1], articulo[2], articulo[4])
+            msg = convertToMsg.msgSalioHoy(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "Lanzamiento":
             articulo = formatLanzamiento(entry)
-            msg = convertToMsg.msgLanzamiento(articulo[1], articulo[2], articulo[4])
+            msg = convertToMsg.msgLanzamiento(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "Resumen":
             articulo = formatResumenAnuncios(entry)
-            msg = convertToMsg.msgResumen(articulo[1], articulo[2], articulo[4])
+            msg = convertToMsg.msgResumen(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "Otro":
             articulo = formatOtro(entry)
-            msg = convertToMsg.msgOtro(articulo[1], articulo[2], articulo[4])
-    articulo.append(msg)
+            msg = convertToMsg.msgOtro(articulo["titulo"], articulo["link"], articulo["contenido"])
+    articulo["mensaje"]=msg
     return articulo

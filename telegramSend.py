@@ -13,6 +13,7 @@ with open('credentials.json', 'r') as jsonFile:
     credentials = json.load(jsonFile)
 myToken = credentials['token']
 channelID = credentials['channelID']
+alertID = credentials['alertID']
 
 # Es para crear logs, asi comunica que hace por si hay un error
 logging.basicConfig(
@@ -21,6 +22,14 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
+
+
+# Devuelve el tipo de archivo que tiene una url. Importante para saber si se trata de una imagen o video
+def checkFiletype(mediaURL):
+    req = urllib.request.Request(mediaURL, method='HEAD', headers={'User-Agent': 'Mozilla/5.0'})
+    r = urllib.request.urlopen(req)
+    mediatype = r.getheader('Content-Type')
+    return mediatype.split("/")[0]
 
 
 # Borra los archivos descargados luego de mandarlos
@@ -103,24 +112,62 @@ async def sendPhoto(app, chat, msg, img):
         )
 
 
+# Envia un video. No debería suceder seguido, pero dejó la opción de mandar esto por las dudas.
+async def sendVideo(app, chat, msg, video):
+    if len(msg) <= 1024:
+        try:
+            await app.bot.sendVideo(
+                chat_id=chat,
+                video=video,
+                caption=msg,
+                parse_mode=ParseMode.HTML
+            )
+        except:
+            downloadedVideo = downloadMedia(video)
+            await app.bot.sendVideo(
+                chat_id=chat,
+                video=downloadedVideo,
+                caption=msg,
+                parse_mode=ParseMode.HTML
+            )
+            deleteTemp()
+    else:
+        await app.bot.sendVideo(
+            chat_id=chat,
+            video=video,
+        )
+        await app.bot.sendMessage(
+            chat_id=chat,
+            disable_web_page_preview=True,
+            text=msg,
+            parse_mode=ParseMode.HTML
+        )
+
+
 # Envia un artículo que no sea reconocido. En este caso vemos si tiene una img. En ese caso se manda con una caption.
 # En caso contrario se manda un mensaje
-async def sendMessageOrPhoto(app, chat, msg, img):
-    if img == -1:
+async def sendMessageOrPhoto(app, chat, msg, media):
+    if media == -1:
         await app.bot.sendMessage(
             chat_id=chat,
             text=msg,
             parse_mode=ParseMode.HTML
         )
     else:
-        await sendPhoto(app, chat, msg, img)
+        filetype = checkFiletype(media)
+        if filetype == "image":
+            await sendPhoto(app, chat, msg, media)
+        elif filetype == "video":
+            await sendVideo(app, chat, msg, media)
+        else:
+            logging.error(msg="No se reconoce el tipo de archivo para mandar (No es ni una foto ni un video)")
 
 
 # Envia lo que salió hoy. Primero manda un grupo con las fotos de los mangas, y luego el detalle en un mensaje
 async def sendGroupPhoto(app, chat, msg, imgs):
     # Vamos a defaultear a descargar las imgs, por las dudas. Cambiar esto en un futuro para que sea opcional
     correctImgs = prepareMedia(imgs, msg, download=True)
-    # Envia grupos de a 10 imagenes
+    # Envia grupos de a 10 imágenes
     while len(correctImgs) > 10:
         if len(correctImgs) % 10 != 0:
             limit = len(correctImgs) % 10
@@ -154,12 +201,13 @@ def initBot():
 
 
 # Revisa que tipo de artículo es, y lo manda a la función correspondiente
-def sendPost(type, msg, imgs):
+def sendPost(articleType, msg, media, alternativeChannel=False):
+    channel = alertID if alternativeChannel else channelID
     bot = initBot()
-    match type:
+    match articleType:
         case "Photo":
-            asyncio.run(sendPhoto(bot, channelID, msg, imgs))
+            asyncio.run(sendPhoto(bot, channel, msg, media))
         case "GroupPhoto":
-            asyncio.run(sendGroupPhoto(bot, channelID, msg, imgs))
+            asyncio.run(sendGroupPhoto(bot, channel, msg, media))
         case "PhotoOrText":
-            asyncio.run(sendMessageOrPhoto(bot, channelID, msg, imgs))
+            asyncio.run(sendMessageOrPhoto(bot, channel, msg, media))

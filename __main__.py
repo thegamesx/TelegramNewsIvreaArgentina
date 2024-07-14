@@ -1,5 +1,5 @@
 import time
-from RSSFeedImporter import checkForNewEntries, deleteEntryFromFile
+from RSSFeedImporter import checkForNewEntries, saveEntries
 from telegramSend import sendPost
 from ivreaParser import parseArticle
 import schedule
@@ -18,20 +18,24 @@ intervalHours = conf['intervalHours']
 # Revisa si hay artículos nuevos. Si los hay los manda, y chequea que funcione correctamente
 def checkForNewAndSend():
     newPosts = checkForNewEntries()
+    errors = []
     if newPosts:
-        for article in newPosts:
+        for index, article in enumerate(newPosts):
             try:
                 articleToSend = parseArticle(article)
-                sendPost(articleToSend[0], articleToSend[5], articleToSend[3])
+                sendPost(articleToSend["tipo"], articleToSend["mensaje"], articleToSend["media"])
                 logging.info("Se envió " + article.title)
             except Exception as error:
-                logging.error("Falló el envió de " + article.title + " El error fue el siguiente:\n", error)
-                if deleteEntryFromFile(article.title):
-                    logging.info(
-                        "Se eliminó " + article.title + " del registro. Se volverá a intentar en el próximo schedule")
-                else:
-                    # TODO: Reimplementar esto, no funciona actualmente
-                    logging.error("No se eliminó " + article.title + " del registro. Revisar manualmente.")
+                msgError = "Falló el envió de " + article.title + " El error fue el siguiente:\n" + error.message
+                logging.error(msg=msgError)
+                # Mandar mensaje a un canal alternativo informando el error
+                sendPost("PhotoOrText", msgError, -1, True)
+                # Guardo el índice del artículo en el que hubo un error, asi puedo sacarlo de la lista luego del for.
+                errors.append(index)
+        if errors:
+            # Elimino de la lista los artículos que no se enviaron
+            newPosts[:] = [entry for index, entry in enumerate(newPosts) if index not in errors]
+        saveEntries(newPosts)
     else:
         logging.info("Se ejecutó el programa. No hay nuevos artículos.")
 
@@ -44,5 +48,3 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
-
-# TODO: Emprolijar el guardado de articulos enviados. Que solo lo guarde si fue exitoso

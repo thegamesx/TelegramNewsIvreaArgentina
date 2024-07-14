@@ -2,3 +2,5 @@
 *.log
 /entries.txt
 /credentials.json.bak
+/.venv/
+/.temp/

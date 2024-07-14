@@ -4,6 +4,11 @@ import os.path
 url = "https://www.ivreality.com.ar/feed/"
 
 
+# Revisa si el archivo está vacío
+def isNonZeroFile(fpath):
+    return os.path.isfile(fpath) and os.path.getsize(fpath) > 0
+
+
 # Actualiza el feed para ver si hay artículos nuevos
 def loadFeed():
     feed = feedparser.parse(url)
@@ -20,23 +25,34 @@ def getArticlesID(articles):
 
 def loadArticleFromID(ID, articles):
     loadArticle = -1
-    for x in articles:
-        if ID == x.id:
-            loadArticle = x
+    for entry in articles:
+        if ID == entry.id:
+            loadArticle = entry
     return loadArticle
+
+
+# Limpia el archivo si hay más de 21 líneas
+def truncateFile():
+    with open('entries.txt', 'r') as fin:
+        entries = fin.readlines()
+    if len(entries) > 20:
+        with open('entries.txt', 'w') as fout:
+            fout.writelines(entries[len(entries) - 20:])
 
 
 # Guarda un archivo con los artículos que se enviaron
 def saveEntries(listToSave):
-    file = open("entries.txt", "w")
-    for article in listToSave:
-        file.write(article + "\n")
+    listID = getArticlesID(listToSave)
+    file = open("entries.txt", "a")
+    for index, article in enumerate(listID):
+        file.write(article if index == 0 and not isNonZeroFile("entries.txt") else "\n" + article)
     file.close()
+    truncateFile()
 
 
-# Carga el archivo y devuelve cada linea en una lista
+# Carga el archivo y devuelve cada línea en una lista
 def loadFile():
-    if os.path.isfile("./entries.txt"):
+    if os.path.isfile("entries.txt"):
         file = open("entries.txt", "r")
         lines = file.readlines()
         for x in range(len(lines)):
@@ -46,17 +62,6 @@ def loadFile():
     else:
         saveEntries([])
         return []
-
-
-# Esta función existe para eliminar un articulo del archivo en caso de fallar el envio
-def deleteEntryFromFile(entryTitle):
-    file = loadFile()
-    for x in range(len(file)):
-        if entryTitle in file[x]:
-            file.pop(x)
-            saveEntries(file)
-            return True
-    return False
 
 
 # Este es la función principal, la cual va a devolver nuevas entradas (si las hay) para procesarlas luego
@@ -72,7 +77,6 @@ def checkForNewEntries():
     for entry in newEntries:
         newEntryList.append(loadArticleFromID(entry, articles))
     if newEntryList:
-        saveEntries(currentEntries)
-        return reversed(newEntryList)
+        return newEntryList[::-1]  # Esto ultimo reversa la lista
     else:
         return False
