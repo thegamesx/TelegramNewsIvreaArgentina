@@ -37,6 +37,11 @@ def msgSalioHoy(title, link, content):
         msg += lineBreak + "<b>REEDICIONES</b>" + lineBreak + lineBreak
         for manga in content[1]:
             msg += "\U0001F504" + " " + manga + lineBreak
+    # Vemos si hubo algún problema con las impresiones. De ser asi agregamos un aviso
+    if content[2]:
+        msg += lineBreak
+        for aviso in content[2]:
+            msg += "\u203C " + aviso + lineBreak
     # Por ultimo, insertamos el link
     msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
 

@@ -7,6 +7,7 @@ def stripHTML(text):
     returnText = re.sub(r"<br(.*?)>", ' ', text)
     returnText = re.sub(r'<.+?>', '', returnText)
     returnText = returnText.replace("&nbsp;"," ")
+    returnText = returnText.strip()
     return returnText
 
 
@@ -31,17 +32,27 @@ def parseTitlesNovedades(body):
 
 # Para recuperar los titulos que salieron hoy, solo vamos a concentrarnos en los titulos. (considerar los subs)
 def parseTitlesSalioHoy(body):
+    problemaImpresion = []
     body = body.split("REEDICIONES")
     lanzamientos = re.findall(r'>(.*?)</h\d>', body[0])
-    for x in range(len(lanzamientos)):
-        lanzamientos[x] = stripHTML(lanzamientos[x])
+    for item in range(len(lanzamientos)):
+        lanzamientos[item] = stripHTML(lanzamientos[item])
+        # Si hay un aviso que un manga no se imprimió a tiempo, se agrega el aviso a una lista aparte
+        if "Por problemas de imprenta" in lanzamientos[item]:
+            problemaImpresion.append(lanzamientos[item])
+            lanzamientos.pop()
     try:
         reediciones = re.findall(r'>(.*?)</h\d>', body[1])
-        for x in range(len(reediciones)):
-            reediciones[x] = stripHTML(reediciones[x])
+        for item in range(len(reediciones)):
+            reediciones[item] = stripHTML(reediciones[item])
+            if "Por problemas de imprenta" in reediciones[item]:
+                problemaImpresion.append(reediciones[item])
+                reediciones.pop()
     except:
         reediciones = None
-    return [lanzamientos, reediciones]
+    # Si hay un aviso, elimino el ultimó elemento de la lista que lo encontró. Si llega a haber más de un aviso hay
+    # que reimplementar esa solución.
+    return [lanzamientos, reediciones, problemaImpresion]
 
 
 def parseLanzamiento(body):
@@ -55,7 +66,10 @@ def parseLanzamiento(body):
 
 # Tomamos el primer parrafo del texto.
 def parseOtro(body):
-    contenido = re.findall(r'<p>(.*?)</p>', body)[0]
+    try:
+        contenido = re.findall(r'<p>(.*?)</p>', body)[0]
+    except:
+        contenido = re.findall(r'>(.*?)</h\d>', body)[0]
     contenido = stripHTML(contenido)
 
     return contenido

@@ -21,12 +21,14 @@ def checkForNewAndSend():
     errors = []
     if newPosts:
         for index, article in enumerate(newPosts):
+            articleLinks = "\nLink: " + article.link + "\nID: " + article.id
             try:
                 articleToSend = parseArticle(article)
                 sendPost(articleToSend["tipo"], articleToSend["mensaje"], articleToSend["media"])
-                logging.info("Se envió " + article.title)
+                logging.info("Se envió " + article.title + articleLinks)
             except Exception as error:
-                msgError = "Falló el envió de " + article.title + " El error fue el siguiente:\n" + error.message
+                msgError = ("Falló el envió de " + article.title + " El error fue el siguiente:\n" + repr(error) +
+                            articleLinks)
                 logging.error(msg=msgError)
                 # Mandar mensaje a un canal alternativo informando el error
                 sendPost("PhotoOrText", msgError, -1, True)
@@ -37,7 +39,7 @@ def checkForNewAndSend():
             newPosts[:] = [entry for index, entry in enumerate(newPosts) if index not in errors]
         saveEntries(newPosts)
     else:
-        logging.info("Se ejecutó el programa. No hay nuevos artículos.")
+        logging.info("No hay nuevos artículos.")
 
 
 schedule.every(intervalHours).hours.do(checkForNewAndSend)
