@@ -1,7 +1,7 @@
 import time
-from RSSFeedImporter import checkForNewEntries, saveEntries
-from telegramSend import sendPost
-from ivreaParser import parseArticle
+from rss_importer import checkForNewEntries, saveEntries
+from telegram_send import sendPost
+from ivrea_parser import parseArticle
 import schedule
 import logging
 import json

@@ -34,7 +34,7 @@ def checkFiletype(mediaURL):
 
 # Borra los archivos descargados luego de mandarlos
 def deleteTemp():
-    for root, dirs, files in os.walk('./.temp'):
+    for root, dirs, files in os.walk('.temp'):
         for file in files:
             if file.endswith('.jpg'):
                 os.remove(os.path.join(root, file))
@@ -45,8 +45,8 @@ def deleteTemp():
 def downloadMedia(imgURL):
     localPath = "./.temp/" + imgURL.split('/')[-1]
     # Me aseguro que exista la carpeta antes de usarla
-    if not os.path.exists("./.temp/"):
-        os.makedirs("./.temp/")
+    if not os.path.exists(".temp/"):
+        os.makedirs(".temp/")
     parsedURL = "https://" + urllib.parse.quote(imgURL[8:])
     urllib.request.urlretrieve(parsedURL, localPath)
     return localPath

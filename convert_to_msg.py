@@ -66,7 +66,13 @@ def msgLanzamiento(title, link, bulletpoints):
         # Aca vamos a ver qué emoji usar, dependiendo del contenido.
         if linea[:3] == "De " or "escrita por" in linea.casefold():
             emoji = "\u270F"  # Lápiz (autor)
-        elif "serie de" in linea.casefold() or "novela compuesta" in linea.casefold() or "tomo único" in linea.casefold():
+        elif (
+            "serie de" in linea.casefold() or
+            "novela compuesta" in linea.casefold() or
+            "tomo único" in linea.casefold() or
+            "tomos de" in linea.casefold() or
+            "libro de" in linea.casefold()
+        ):
             emoji = "\U0001F4DA"  # Pila de libros (duración)
         elif "formato " in linea.casefold():
             emoji = "\U0001F4C4"  # Hoja (Formato)

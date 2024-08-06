@@ -1,12 +1,12 @@
 import re
 import itertools
-import convertToMsg
+import convert_to_msg as convertMsg
 
 
 def stripHTML(text):
     returnText = re.sub(r"<br(.*?)>", ' ', text)
     returnText = re.sub(r'<.+?>', '', returnText)
-    returnText = returnText.replace("&nbsp;"," ")
+    returnText = returnText.replace("&nbsp;", " ")
     returnText = returnText.strip()
     return returnText
 
@@ -200,37 +200,37 @@ def formatOtro(entry):
     return listaFinal
 
 
-def checkTypeArticle(titulo):
-    if "novedades del" in titulo.casefold():
+def checkTypeArticle(articulo):
+    if "novedades del" in articulo.title.casefold():
         return "Novedades"
-    elif "todo lo que sali" in titulo.casefold():
+    elif "todo lo que sali" in articulo.title.casefold():
         return "SalioHoy"
-    elif "ivrea publicar" in titulo.casefold():
-        return "Lanzamiento"
-    elif "resumen de" in titulo.casefold():
+    elif "resumen de" in articulo.title.casefold():
         return "Resumen"
+    elif ("ivrea publicar" in articulo.title.casefold() or
+          (articulo.tags[0]["term"] == "NUEVAS SERIES" and articulo.content[0]['value'].count("<br />") > 2)):
+        return "Lanzamiento"
     else:
         return "Otro"
 
 
 def parseArticle(entry):
-    articleType = checkTypeArticle(entry.title)
-    # TODO: Hacer que el articulo sea un clase en vez de una lista, asi es más intuitivo que se está usando
+    articleType = checkTypeArticle(entry)
     match articleType:
         case "Novedades":
             articulo = formatNovedades(entry)
-            msg = convertToMsg.msgNovedades(articulo["titulo"], articulo["link"], articulo["contenido"])
+            msg = convertMsg.msgNovedades(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "SalioHoy":
             articulo = formatSalioHoy(entry)
-            msg = convertToMsg.msgSalioHoy(articulo["titulo"], articulo["link"], articulo["contenido"])
+            msg = convertMsg.msgSalioHoy(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "Lanzamiento":
             articulo = formatLanzamiento(entry)
-            msg = convertToMsg.msgLanzamiento(articulo["titulo"], articulo["link"], articulo["contenido"])
+            msg = convertMsg.msgLanzamiento(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "Resumen":
             articulo = formatResumenAnuncios(entry)
-            msg = convertToMsg.msgResumen(articulo["titulo"], articulo["link"], articulo["contenido"])
+            msg = convertMsg.msgResumen(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "Otro":
             articulo = formatOtro(entry)
-            msg = convertToMsg.msgOtro(articulo["titulo"], articulo["link"], articulo["contenido"])
-    articulo["mensaje"]=msg
+            msg = convertMsg.msgOtro(articulo["titulo"], articulo["link"], articulo["contenido"])
+    articulo["mensaje"] = msg
     return articulo
