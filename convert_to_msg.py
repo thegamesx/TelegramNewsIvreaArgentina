@@ -64,7 +64,7 @@ def msgLanzamiento(title, link, bulletpoints):
     # Inserta los detalles, eliminando los que ya insertamos arriba
     for linea in bulletpoints[eliminar:]:
         # Aca vamos a ver qué emoji usar, dependiendo del contenido.
-        if linea[:3] == "De " or "escrita por" in linea.casefold():
+        if linea[:3].casefold() == "de " or "escrita por" in linea.casefold():
             emoji = "\u270F"  # Lápiz (autor)
         elif (
             "serie de" in linea.casefold() or

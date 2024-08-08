@@ -207,8 +207,7 @@ def checkTypeArticle(articulo):
         return "SalioHoy"
     elif "resumen de" in articulo.title.casefold():
         return "Resumen"
-    elif ("ivrea publicar" in articulo.title.casefold() or
-          (articulo.tags[0]["term"] == "NUEVAS SERIES" and articulo.content[0]['value'].count("<br />") > 2)):
+    elif "ivrea publicar" in articulo.title.casefold() or articulo.content[0]['value'].count("<br />") > 2:
         return "Lanzamiento"
     else:
         return "Otro"
