@@ -12,8 +12,7 @@ def isNonZeroFile(fpath):
 # Actualiza el feed para ver si hay artículos nuevos
 def loadFeed():
     feed = feedparser.parse(url)
-    listOfArticles = feed.entries
-    return listOfArticles
+    return feed.entries
 
 
 def getArticlesID(articles):

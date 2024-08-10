@@ -77,15 +77,27 @@ def parseOtro(body):
 
 def parseResumenAnuncios(body):
     anuncios = []
-    parrafos = re.findall(r'<p>(.*?)</p>', body)
-    for parrafo in parrafos:
-        anuncios.append(re.findall(r'<strong>(.*?)</strong>', parrafo))
-    anuncios = list(filter(None, anuncios))
-    for x in range(len(anuncios)):
-        for i in range(len(anuncios[x])):
-            anuncios[x][i] = anuncios[x][i].split("&#8211;")
-            anuncios[x][i] = list(filter(None, anuncios[x][i]))
-        anuncios[x] = list(itertools.chain.from_iterable(anuncios[x]))
+    items = re.findall(r'<p>(.*?)</p>', body)
+    # Viejo formato para el resumen de anuncios. Ver si es relevante en un futuro.
+    if items:
+        for parrafo in items:
+            anuncios.append(re.findall(r'<strong>(.*?)</strong>', parrafo))
+        anuncios = list(filter(None, anuncios))
+        for x in range(len(anuncios)):
+            for i in range(len(anuncios[x])):
+                anuncios[x][i] = anuncios[x][i].split("&#8211;")
+                anuncios[x][i] = list(filter(None, anuncios[x][i]))
+            anuncios[x] = list(itertools.chain.from_iterable(anuncios[x]))
+    # Nueva formato (10/8/24). Ver si se repite este formato
+    else:
+        items = re.findall(r'(?s)(?<=<ul class=\"wp-block-list\">).*?(?=</ul>)', body)
+        for item in items:
+            lineaItem = [re.search(r'<strong>(.*?)</strong>', item).group()]
+            bulletpoints = item.split("&#8211;")
+            bulletpoints[0] = re.sub(r"<a(.*?)</a>", ' ', bulletpoints[0])
+            for line in bulletpoints: lineaItem.append(stripHTML(line))
+            anuncios.append(lineaItem)
+
     return anuncios
 
 
@@ -98,15 +110,14 @@ def fetchImage(text):
     return imageURL
 
 
+# Ver si es necesario mantener esta funcion, es muy simple
 def deleteReedicionesFromGroupImgs(list, start):
-    trimmedList = list[:start]
-    return trimmedList
+    return list[:start]
 
 
 # Devuelve un array con todas las imgs de los mangas que salieron hoy
 def fetchGroupImgs(article):
-    imgs = re.findall(r'src=\"(.*?)\"', article)
-    return imgs
+    return re.findall(r'src=\"(.*?)\"', article)
 
 
 # Para darle formato a las novedades, vamos a poner el titulo, link, y cada manga que sale en una lista
@@ -167,12 +178,15 @@ def formatLanzamiento(entry):
 
 
 def formatResumenAnuncios(entry):
-    tipo = "GroupPhoto"
+    tipo = "GroupPhoto"  # Lo declaramos acá por las dudas
     titulo = entry.title
     link = entry.link
     contenido = parseResumenAnuncios(entry.content[0]['value'])
     imagenes = fetchGroupImgs(entry.content[0]['value'])
-    if len(imagenes) < len(contenido):
+    if len(imagenes) == 1:
+        tipo = "Photo"
+        imagenes = imagenes[0]
+    elif len(imagenes) < len(contenido):
         contenido = contenido[:len(imagenes)]
     listaFinal = {
         "tipo": tipo,

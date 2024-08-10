@@ -106,15 +106,23 @@ def msgResumen(title, link, content):
         for linea in newManga[1:]:
             # El segundo debería ser el formato, pero chequeamos por las dudas
             if "formato " in linea.casefold():
-                emoji = "\U0001F4C4"  # Hoja (Formato)
-            elif "a la venta" in linea.casefold():
-                emoji = "\u23F0"  # Reloj despertador (Lanzamiento)
+                emoji = "   \U0001F4C4 "  # Hoja (Formato)
+            elif "a la venta" in linea.casefold() or "salida" in linea.casefold():
+                emoji = "   \u23F0 "  # Reloj despertador (Lanzamiento)
+            elif (
+                    "serie de" in linea.casefold() or
+                    "novela compuesta" in linea.casefold() or
+                    "tomo único" in linea.casefold() or
+                    "tomos de" in linea.casefold() or
+                    "libro de" in linea.casefold()
+            ):
+                emoji = "   \U0001F4DA "  # Pila de libros (duración)
             else:
-                emoji = "\u2705"  # Tick (otro)
+                emoji = "   \u2705 "  # Tick (otro)
             msg += emoji + linea + lineBreak
         msg += lineBreak
     # Por ultimo, insertamos el link
-    msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
+    msg += "<a href=\"" + link + "\">Leer más</a>"
 
     return msg
 
