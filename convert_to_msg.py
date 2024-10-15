@@ -17,7 +17,7 @@ def msgNovedades(title, link, content):
                 firstReedicion = True
         else:
             emoji = "\U0001F4D6"  # Libro abierto
-        msg += emoji + " " + manga + lineBreak
+        msg += emoji + " " + manga.replace("(REEDICIÓN)","") + lineBreak
     # Por ultimo, insertamos el link
     msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
 
@@ -56,7 +56,7 @@ def msgLanzamiento(title, link, bulletpoints):
     # Primero sabemos que el primero siempre es el título, asi que insertamos eso
     msg += "\U0001F4D6" + " <b>" + bulletpoints[0] + "</b>" + lineBreak
     # Y luego vemos si el siguiente es el nombre original. En caso de no tenerlo, se sigue con el resto
-    if bulletpoints[1][:3] != "De ":
+    if bulletpoints[1][:3].casefold() != "de " or "escrita por" in bulletpoints[1].casefold():
         msg += "\U0001F1EF\U0001F1F5" + " " + bulletpoints[1] + lineBreak
         eliminar = 2
     else:
