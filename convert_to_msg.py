@@ -101,9 +101,9 @@ def msgResumen(title, link, content):
     # Inserta 2 saltos de línea
     msg += lineBreak + lineBreak
     for newManga in content:
-        # Primero sabemos que el primero siempre es el título, asi que insertamos eso
-        msg += "\U0001F4D6" + " <b>" + newManga[0] + "</b>" + lineBreak
-        for linea in newManga[1:]:
+        # Las primeras dos líneas incluyen un link y el título, asi que las combinamos de la sig forma
+        msg += "\U0001F4D6" + "<a href=" + newManga[0] + "><b>" + newManga[1] + "</b></a>" + lineBreak
+        for linea in newManga[2:]:
             # El segundo debería ser el formato, pero chequeamos por las dudas
             if "formato " in linea.casefold():
                 emoji = "   \U0001F4C4 "  # Hoja (Formato)
@@ -114,7 +114,8 @@ def msgResumen(title, link, content):
                     "novela compuesta" in linea.casefold() or
                     "tomo único" in linea.casefold() or
                     "tomos de" in linea.casefold() or
-                    "libro de" in linea.casefold()
+                    "libro de" in linea.casefold() or
+                    "nueva serie" in linea.casefold()
             ):
                 emoji = "   \U0001F4DA "  # Pila de libros (duración)
             else:

@@ -1,5 +1,4 @@
 import re
-import itertools
 import convert_to_msg as convertMsg
 
 
@@ -7,8 +6,7 @@ def stripHTML(text):
     returnText = re.sub(r"<br(.*?)>", ' ', text)
     returnText = re.sub(r'<.+?>', '', returnText)
     returnText = returnText.replace("&nbsp;", " ")
-    returnText = returnText.strip()
-    return returnText
+    return returnText.strip()
 
 
 # En los artículos que muestran que salió hoy, rescatamos los títulos en forma de lista, con sus respectivos subtítulos
@@ -78,26 +76,16 @@ def parseOtro(body):
 def parseResumenAnuncios(body):
     anuncios = []
     items = re.findall(r'<p>(.*?)</p>', body)
-    # Viejo formato para el resumen de anuncios. Ver si es relevante en un futuro.
-    if items:
-        for parrafo in items:
-            anuncios.append(re.findall(r'<strong>(.*?)</strong>', parrafo))
-        anuncios = list(filter(None, anuncios))
-        for x in range(len(anuncios)):
-            for i in range(len(anuncios[x])):
-                anuncios[x][i] = anuncios[x][i].split("&#8211;")
-                anuncios[x][i] = list(filter(None, anuncios[x][i]))
-            anuncios[x] = list(itertools.chain.from_iterable(anuncios[x]))
-    # Nueva formato (10/8/24). Ver si se repite este formato
-    else:
-        items = re.findall(r'(?s)(?<=<ul class=\"wp-block-list\">).*?(?=</ul>)', body)
-        for item in items:
-            lineaItem = [re.search(r'<strong>(.*?)</strong>', item).group()]
-            bulletpoints = item.split("&#8211;")
-            bulletpoints[0] = re.sub(r"<a(.*?)</a>", ' ', bulletpoints[0])
-            for line in bulletpoints: lineaItem.append(stripHTML(line))
-            anuncios.append(lineaItem)
-
+    # Nuevo formato (10/8/24). Ver si se repite este formato
+    # 20/10/24: Se repitió el formato viejo, pero con otra forma. Se van a hacer cambios a este código y
+    # se va a eliminar la comprobación de formatos. Ver si necesita otros detalles luego.
+    for item in items:
+        lineaItem = [re.search(r'href="(.*?)/">', item).group()[5:-1]]
+        bulletpoints = item.split("&#8211;")[1:]
+        bulletpoints.insert(1, bulletpoints[0].split("</strong>")[1])
+        bulletpoints[0] = bulletpoints[0].split("<")[0][:-1]
+        for line in bulletpoints: lineaItem.append(stripHTML(line))
+        anuncios.append(lineaItem)
     return anuncios
 
 

@@ -29,6 +29,9 @@ def checkForNewAndSend():
             except Exception as error:
                 msgError = ("Falló el envió de " + article.title + " El error fue el siguiente:\n" + repr(error) +
                             articleLinks)
+                msgError = msgError.replace("&", "&amp;")
+                msgError = msgError.replace("<","&lt;")
+                msgError = msgError.replace(">", "&gt;")
                 logging.error(msg=msgError)
                 # Mandar mensaje a un canal alternativo informando el error
                 sendPost("PhotoOrText", msgError, -1, True)
