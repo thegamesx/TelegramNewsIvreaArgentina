@@ -64,10 +64,10 @@ def parseLanzamiento(body):
 
 # Tomamos el primer parrafo del texto.
 def parseOtro(body):
-    try:
-        contenido = re.findall(r'<p>(.*?)</p>', body)[0]
-    except:
-        contenido = re.findall(r'>(.*?)</h\d>', body)[0]
+    #Primero sacamos la imagen del articulo.
+    contenido = re.sub(r"<figure(.*?)</figure>", '', body)
+    #Luego buscamos la primera instancia de un texto encapsulado en un etiquetado de HTML
+    contenido = re.findall(r'>(.*?)</[^<]+(?=>)', contenido)[0]
     contenido = stripHTML(contenido)
 
     return contenido
