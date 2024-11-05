@@ -58,7 +58,8 @@ def parseLanzamiento(body):
     bulletpoints = parrafos[0].split("<br />")
     for x in range(len(bulletpoints)):
         bulletpoints[x] = stripHTML(bulletpoints[x])
-    bulletpoints = list(filter(None, bulletpoints))
+    # Nos fijamos si un item tiene demasiado texto o si está vacío, para eliminarlo de la lista
+    bulletpoints = list(filter(lambda y: 150 > len(y) > 1, bulletpoints))
     return bulletpoints
 
 
