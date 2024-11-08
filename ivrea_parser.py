@@ -1,5 +1,6 @@
 import re
 import convert_to_msg as convertMsg
+import requests
 
 
 def stripHTML(text):
@@ -7,6 +8,36 @@ def stripHTML(text):
     returnText = re.sub(r'<.+?>', '', returnText)
     returnText = returnText.replace("&nbsp;", " ")
     return returnText.strip()
+
+
+# Intentamos conseguir un link a Anilist y MAL para adjuntar al mensaje de una novedad.
+def fetchDatabaseLinks(titleData):
+    query = """
+        query ($title: String) {
+            Media (search: $title, type: MANGA) {
+                id
+                idMal
+            }
+        }
+    """
+
+    searchQuery = {
+        "title": titleData[1]
+        if not (titleData[1][:3].casefold() == "de " or "escrita por" in titleData[1].casefold())
+        else titleData[0]
+    }
+
+    url = 'https://graphql.anilist.co'
+
+    response = requests.post(url, json={'query': query, 'variables': searchQuery})
+
+    data = response.json()
+    links = {
+        "anilist": data["data"]["Media"]["id"],
+        "MAL": data["data"]["Media"]["idMal"]
+    }
+
+    return links
 
 
 # En los artículos que muestran que salió hoy, rescatamos los títulos en forma de lista, con sus respectivos subtítulos
@@ -65,9 +96,9 @@ def parseLanzamiento(body):
 
 # Tomamos el primer parrafo del texto.
 def parseOtro(body):
-    #Primero sacamos la imagen del articulo.
+    # Primero sacamos la imagen del articulo.
     contenido = re.sub(r"<figure(.*?)</figure>", '', body)
-    #Luego buscamos la primera instancia de un texto encapsulado en un etiquetado de HTML
+    # Luego buscamos la primera instancia de un texto encapsulado en un etiquetado de HTML
     contenido = re.findall(r'>(.*?)</[^<]+(?=>)', contenido)[0]
     contenido = stripHTML(contenido)
 
@@ -85,7 +116,8 @@ def parseResumenAnuncios(body):
         bulletpoints = item.split("&#8211;")[1:]
         bulletpoints.insert(1, bulletpoints[0].split("</strong>")[1])
         bulletpoints[0] = bulletpoints[0].split("<")[0][:-1]
-        for line in bulletpoints: lineaItem.append(stripHTML(line))
+        for line in bulletpoints:
+            lineaItem.append(stripHTML(line))
         anuncios.append(lineaItem)
     return anuncios
 
@@ -100,8 +132,8 @@ def fetchImage(text):
 
 
 # Ver si es necesario mantener esta funcion, es muy simple
-def deleteReedicionesFromGroupImgs(list, start):
-    return list[:start]
+def deleteReedicionesFromGroupImgs(lista, start):
+    return lista[:start]
 
 
 # Devuelve un array con todas las imgs de los mangas que salieron hoy
@@ -109,7 +141,7 @@ def fetchGroupImgs(article):
     return re.findall(r'src=\"(.*?)\"', article)
 
 
-# Para darle formato a las novedades, vamos a poner el titulo, link, y cada manga que sale en una lista
+# Para darle formato a las novedades, vamos a poner el título, link, y cada manga que sale en una lista
 def formatNovedades(entry):
     tipo = "Photo"
     titulo = entry.title
@@ -156,12 +188,14 @@ def formatLanzamiento(entry):
     link = entry.link
     imagen = fetchImage(entry.content[0]['value'])
     contenido = parseLanzamiento(entry.content[0]['value'])
+    linksExternos = fetchDatabaseLinks(contenido)
     listaFinal = {
         "tipo": tipo,
         "titulo": titulo,
         "link": link,
         "media": imagen,
-        "contenido": contenido
+        "contenido": contenido,
+        "databaseLinks": linksExternos
     }
     return listaFinal
 
@@ -227,7 +261,8 @@ def parseArticle(entry):
             msg = convertMsg.msgSalioHoy(articulo["titulo"], articulo["link"], articulo["contenido"])
         case "Lanzamiento":
             articulo = formatLanzamiento(entry)
-            msg = convertMsg.msgLanzamiento(articulo["titulo"], articulo["link"], articulo["contenido"])
+            msg = convertMsg.msgLanzamiento(articulo["titulo"], articulo["link"], articulo["contenido"],
+                                            articulo["databaseLinks"])
         case "Resumen":
             articulo = formatResumenAnuncios(entry)
             msg = convertMsg.msgResumen(articulo["titulo"], articulo["link"], articulo["contenido"])

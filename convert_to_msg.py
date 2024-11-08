@@ -11,13 +11,13 @@ def msgNovedades(title, link, content):
     for manga in content:
         if "(REEDICIÓN)" in manga:
             emoji = "\U0001F504"  # Flechas circulares
-            if firstReedicion == False:
+            if not firstReedicion:
                 # Separamos las reediciones
                 msg += lineBreak + "<b>REEDICIONES</b>" + lineBreak + lineBreak
                 firstReedicion = True
         else:
             emoji = "\U0001F4D6"  # Libro abierto
-        msg += emoji + " " + manga.replace("(REEDICIÓN)","") + lineBreak
+        msg += emoji + " " + manga.replace("(REEDICIÓN)", "") + lineBreak
     # Por ultimo, insertamos el link
     msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
 
@@ -27,7 +27,7 @@ def msgNovedades(title, link, content):
 def msgSalioHoy(title, link, content):
     # Inserta el título
     msg = "<b>" + title + "</b>"
-    # Inserta 2 saltos de linea
+    # Inserta 2 saltos de línea
     msg += lineBreak + lineBreak
     # Inserta los titulos
     for manga in content[0]:
@@ -48,10 +48,10 @@ def msgSalioHoy(title, link, content):
     return msg
 
 
-def msgLanzamiento(title, link, bulletpoints):
+def msgLanzamiento(title, link, bulletpoints, linksExternos):
     # Inserta el título
     msg = "<b>" + title + "</b>"
-    # Inserta 2 saltos de linea
+    # Inserta 2 saltos de línea
     msg += lineBreak + lineBreak
     # Primero sabemos que el primero siempre es el título, asi que insertamos eso
     msg += "\U0001F4D6" + " <b>" + bulletpoints[0] + "</b>" + lineBreak
@@ -67,11 +67,11 @@ def msgLanzamiento(title, link, bulletpoints):
         if linea[:3].casefold() == "de " or "escrita por" in linea.casefold():
             emoji = "\u270F"  # Lápiz (autor)
         elif (
-            "serie de" in linea.casefold() or
-            "novela compuesta" in linea.casefold() or
-            "tomo único" in linea.casefold() or
-            "tomos de" in linea.casefold() or
-            "libro de" in linea.casefold()
+                "serie de" in linea.casefold() or
+                "novela compuesta" in linea.casefold() or
+                "tomo único" in linea.casefold() or
+                "tomos de" in linea.casefold() or
+                "libro de" in linea.casefold()
         ):
             emoji = "\U0001F4DA"  # Pila de libros (duración)
         elif "formato " in linea.casefold():
@@ -89,6 +89,15 @@ def msgLanzamiento(title, link, bulletpoints):
         else:
             emoji = "\u2705"  # Tick (otro)
         msg += emoji + " " + linea + lineBreak
+    if linksExternos["anilist"] or linksExternos["MAL"]:
+        msg += lineBreak
+    # Insertamos links a Anilist y MAL, si encuentra la serie en cuestión
+    if linksExternos["anilist"]:
+        msg += "\u27A1\uFE0F " + "<a href=\"https://anilist.co/manga/" + str(
+            linksExternos["anilist"]) + "\">Anilist</a>" + lineBreak
+    if linksExternos["MAL"]:
+        msg += "\u27A1\uFE0F " + "<a href=\"https://myanimelist.net/manga/" + str(
+            linksExternos["MAL"]) + "\">MyAnimeList</a>" + lineBreak
     # Por ultimo, insertamos el link
     msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
 

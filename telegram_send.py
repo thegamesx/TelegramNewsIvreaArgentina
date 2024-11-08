@@ -55,7 +55,7 @@ def downloadMedia(imgURL):
 # Arregla los links para poder enviarlos como grupo
 def prepareMedia(mediaList, message=-1, download=False):
     correctList = []
-    # Aca agregamos un caption al primer elemento, ademas de acomodar las fotos. Se hace solo si recibimos un msg
+    # Aca agregamos un caption al primer elemento, además de acomodar las fotos. Se hace solo si recibimos un msg
     # para agregar o si el msg es muy largo
     if message == -1 or len(message) > 1024:
         for img in mediaList:
