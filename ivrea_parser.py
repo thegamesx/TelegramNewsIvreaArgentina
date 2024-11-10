@@ -1,6 +1,8 @@
+import logging
 import re
 import convert_to_msg as convertMsg
 import requests
+import math
 
 
 def stripHTML(text):
@@ -31,11 +33,18 @@ def fetchDatabaseLinks(titleData):
 
     response = requests.post(url, json={'query': query, 'variables': searchQuery})
 
-    data = response.json()
-    links = {
-        "anilist": data["data"]["Media"]["id"],
-        "MAL": data["data"]["Media"]["idMal"]
-    }
+    if response.status_code == 200:
+        data = response.json()
+        links = {
+            "anilist": data["data"]["Media"]["id"],
+            "MAL": data["data"]["Media"]["idMal"]
+        }
+    else:
+        logging.exception("Fallo la API de Anilist, con el código " + str(response.status_code) + ": " + response.reason)
+        links = {
+            "anilist": None,
+            "MAL": None
+        }
 
     return links
 
@@ -106,19 +115,34 @@ def parseOtro(body):
 
 
 def parseResumenAnuncios(body):
+    # 10/11/24: Se volvió a cambiar el formato. Esperemos que sea consistente, si no voy a discontinuar esta función
+    # y hacer algo más genérico.
     anuncios = []
     items = re.findall(r'<p>(.*?)</p>', body)
-    # Nuevo formato (10/8/24). Ver si se repite este formato
-    # 20/10/24: Se repitió el formato viejo, pero con otra forma. Se van a hacer cambios a este código y
-    # se va a eliminar la comprobación de formatos. Ver si necesita otros detalles luego.
-    for item in items:
-        lineaItem = [re.search(r'href="(.*?)/">', item).group()[5:-1]]
-        bulletpoints = item.split("&#8211;")[1:]
-        bulletpoints.insert(1, bulletpoints[0].split("</strong>")[1])
-        bulletpoints[0] = bulletpoints[0].split("<")[0][:-1]
-        for line in bulletpoints:
-            lineaItem.append(stripHTML(line))
-        anuncios.append(lineaItem)
+    if len(items) < 3:
+        items = re.findall(r'<li>(.*?)</li>', body)
+        for item in items:
+            lineaItem = []
+            titulo = re.search(r'<a(.*?)</a>', item).group()
+            link = [re.search(r'href="(.*?)/">', titulo).group()[5:-1]][0]
+            titulo = stripHTML(titulo)
+            if titulo[-1] == ":":
+                titulo = titulo[:-1]
+            bulletpoints = re.sub(r"<a(.*?)</a>", '', item).split("&#8211;")
+            lineaItem.append(link)
+            lineaItem.append(titulo)
+            for line in bulletpoints:
+                lineaItem.append(stripHTML(line))
+            anuncios.append(lineaItem)
+    else:
+        for item in items:
+            lineaItem = [re.search(r'href="(.*?)/">', item).group()[5:-1]]
+            bulletpoints = item.split("&#8211;")[1:]
+            bulletpoints.insert(1, bulletpoints[0].split("</strong>")[1])
+            bulletpoints[0] = bulletpoints[0].split("<")[0][:-1]
+            for line in bulletpoints:
+                lineaItem.append(stripHTML(line))
+            anuncios.append(lineaItem)
     return anuncios
 
 
@@ -150,8 +174,12 @@ def formatNovedades(entry):
     imagen = fetchGroupImgs(entry.content[0]['value'])
     # Puede que hayan multiples imágenes. En ese caso vemos si son más de una (ignorando reediciones) y categorizamos
     # el post según corresponda
-    if len(imagen) > 1 and any("(reedición)" in titulo.casefold() for titulo in contenido):
-        imagen = imagen[:-1]
+    reediciones = 0
+    for item in contenido:
+        if "(reedición)" in item.casefold():
+            reediciones += 1
+    if len(imagen) > 1 and reediciones > 0:
+        imagen = imagen[:-int(math.ceil(reediciones/6))]
     if len(imagen) == 1:
         imagen = imagen[0]
     else:
