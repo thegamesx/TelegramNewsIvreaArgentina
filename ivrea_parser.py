@@ -70,27 +70,22 @@ def parseTitlesNovedades(body):
 
 # Para recuperar los titulos que salieron hoy, solo vamos a concentrarnos en los titulos. (considerar los subs)
 def parseTitlesSalioHoy(body):
-    problemaImpresion = []
-    body = body.split("REEDICIONES")
-    lanzamientos = re.findall(r'>(.*?)</h\d>', body[0])
+    problema_impresion = []
+    split_body = body.split("REEDICIONES")
+    lanzamientos = re.findall(r'<h\d.class="wp-block-heading">(.*?)</h\d>', split_body[0])
     for item in range(len(lanzamientos)):
         lanzamientos[item] = stripHTML(lanzamientos[item])
-        # Si hay un aviso que un manga no se imprimió a tiempo, se agrega el aviso a una lista aparte
-        if "Por problemas de imprenta" in lanzamientos[item]:
-            problemaImpresion.append(lanzamientos[item])
-            lanzamientos.pop()
     try:
-        reediciones = re.findall(r'>(.*?)</h\d>', body[1])
+        reediciones = re.findall(r'<h\d.class="wp-block-heading">(.*?)</h\d>', split_body[1])
         for item in range(len(reediciones)):
             reediciones[item] = stripHTML(reediciones[item])
-            if "Por problemas de imprenta" in reediciones[item]:
-                problemaImpresion.append(reediciones[item])
-                reediciones.pop()
-    except:
+    except FileNotFoundError:
         reediciones = None
-    # Si hay un aviso, elimino el ultimó elemento de la lista que lo encontró. Si llega a haber más de un aviso hay
-    # que reimplementar esa solución.
-    return [lanzamientos, reediciones, problemaImpresion]
+    # Acá revisamos si hubo algún problema de impresión. En caso de haber más de uno se tendría que reimplementar esto
+    if "Por problemas de imprenta" in body:
+        problem = re.findall(r'>(.*?)</h\d>', body)[-1]
+        problema_impresion.append(stripHTML(problem))
+    return [lanzamientos, reediciones, problema_impresion]
 
 
 def parseLanzamiento(body):
