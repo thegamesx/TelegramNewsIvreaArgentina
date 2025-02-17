@@ -3,6 +3,13 @@ import re
 import convert_to_msg as convertMsg
 import requests
 import math
+import json
+
+
+# Cargo la configuración a través de un archivo
+with open('conf.json', 'r') as jsonFile:
+    conf = json.load(jsonFile)
+numberOfReprints = conf['numberOfReprints']
 
 
 def stripHTML(text):
@@ -174,7 +181,7 @@ def formatNovedades(entry):
         if "(reedición)" in item.casefold():
             reediciones += 1
     if len(imagen) > 1 and reediciones > 0:
-        imagen = imagen[:-int(math.ceil(reediciones/6))]
+        imagen = imagen[:-int(math.ceil(reediciones/numberOfReprints))]
     if len(imagen) == 1:
         imagen = imagen[0]
     else:
