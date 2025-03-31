@@ -178,7 +178,7 @@ def formatNovedades(entry):
     # el post según corresponda
     reediciones = 0
     for item in contenido:
-        if "(reedición)" in item.casefold():
+        if "(reedición)" in item.casefold() or "(reediciones)" in item.casefold():
             reediciones += 1
     if len(imagen) > 1 and reediciones > 0:
         imagen = imagen[:-int(math.ceil(reediciones/numberOfReprints))]

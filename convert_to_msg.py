@@ -9,15 +9,18 @@ def msgNovedades(title, link, content):
     msg += lineBreak + lineBreak
     # Inserta los títulos
     for manga in content:
-        if "(REEDICIÓN)" in manga:
+        if "(reedición)" in manga.casefold() or "(reediciones)" in manga.casefold():
             emoji = "\U0001F504"  # Flechas circulares
             if not firstReedicion:
                 # Separamos las reediciones
                 msg += lineBreak + "<b>REEDICIONES</b>" + lineBreak + lineBreak
                 firstReedicion = True
+            mangaTitle = manga.replace("(REEDICIÓN)", "")
+            mangaTitle = mangaTitle.replace("(REEDICIONES)", "")
         else:
             emoji = "\U0001F4D6"  # Libro abierto
-        msg += emoji + " " + manga.replace("(REEDICIÓN)", "") + lineBreak
+            mangaTitle = manga
+        msg += emoji + " " + mangaTitle + lineBreak
     # Por ultimo, insertamos el link
     msg += lineBreak + "<a href=\"" + link + "\">Leer más</a>"
 
