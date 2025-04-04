@@ -119,18 +119,27 @@ def parseOtro(body):
 def parseResumenAnuncios(body):
     # 10/11/24: Se volvió a cambiar el formato. Esperemos que sea consistente, si no voy a discontinuar esta función
     # y hacer algo más genérico.
+    # 4/4/25: El formato cambió ligeramente. Todavía estoy considerando si cambiarlo, pero por ahora solo fue acomodar
+    # un par de cosas chicas.
     anuncios = []
     items = re.findall(r'<p>(.*?)</p>', body)
-    if len(items) < 3:
+    if len(items) <= 4:
         items = re.findall(r'<li>(.*?)</li>', body)
         for item in items:
             lineaItem = []
-            titulo = re.search(r'<a(.*?)</a>', item).group()
-            link = [re.search(r'href="(.*?)/">', titulo).group()[5:-1]][0]
+            titulo = re.search(r'<a(.*?)</a>', item)
+            if not titulo:
+                titulo = re.search(r'<strong(.*?)</strong>', item).group()
+                link = None
+            else:
+                titulo = re.search(r'<a(.*?)</a>', item).group()
+                link = [re.search(r'href="(.*?)/">', titulo).group()[5:-1]][0]
             titulo = stripHTML(titulo)
             if titulo[-1] == ":":
                 titulo = titulo[:-1]
-            bulletpoints = re.sub(r"<a(.*?)</a>", '', item).split("&#8211;")
+            bulletpoints = re.sub(r"<a(.*?)</a>", '', item).split("–")
+            bulletpoints[0] = re.sub(r"<strong(.*?)</strong>", '', bulletpoints[0])
+            bulletpoints[0] = re.sub(r"<a(.*?)</a>", '', bulletpoints[0])
             lineaItem.append(link)
             lineaItem.append(titulo)
             for line in bulletpoints:

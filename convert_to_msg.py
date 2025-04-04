@@ -114,7 +114,10 @@ def msgResumen(title, link, content):
     msg += lineBreak + lineBreak
     for newManga in content:
         # Las primeras dos líneas incluyen un link y el título, asi que las combinamos de la sig forma
-        msg += "\U0001F4D6" + "<a href=" + newManga[0] + "><b>" + newManga[1] + "</b></a>" + lineBreak
+        if newManga[0]:
+            msg += "\U0001F4D6" + "<a href=" + newManga[0] + "><b>" + newManga[1] + "</b></a>" + lineBreak
+        else:
+            msg += "\U0001F4D6" + "<b>" + newManga[1] + "</b>" + lineBreak
         for linea in newManga[2:]:
             # El segundo debería ser el formato, pero chequeamos por las dudas
             if "formato " in linea.casefold():
