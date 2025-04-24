@@ -66,16 +66,19 @@ def loadFile():
 # Este es la función principal, la cual va a devolver nuevas entradas (si las hay) para procesarlas luego
 def checkForNewEntries():
     articles = loadFeed()
-    currentEntries = getArticlesID(articles)
-    savedEntries = loadFile()
-    newEntries = []
-    newEntryList = []
-    for article in currentEntries:
-        if not article in savedEntries:
-            newEntries.append(article)
-    for entry in newEntries:
-        newEntryList.append(loadArticleFromID(entry, articles))
-    if newEntryList:
-        return newEntryList[::-1]  # Esto ultimo reversa la lista
+    if articles:
+        currentEntries = getArticlesID(articles)
+        savedEntries = loadFile()
+        newEntries = []
+        newEntryList = []
+        for article in currentEntries:
+            if not article in savedEntries:
+                newEntries.append(article)
+        for entry in newEntries:
+            newEntryList.append(loadArticleFromID(entry, articles))
+        if newEntryList:
+            return newEntryList[::-1]  # Esto ultimo reversa la lista
+        else:
+            return False
     else:
-        return False
+        return {"error": "El feed está vacío. La página está caída o hay un error en la conexión."}
