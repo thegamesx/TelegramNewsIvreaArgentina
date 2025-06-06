@@ -127,6 +127,7 @@ def parseResumenAnuncios(body):
     # y hacer algo más genérico.
     # 4/4/25: El formato cambió ligeramente. Todavía estoy considerando si cambiarlo, pero por ahora solo fue acomodar
     # un par de cosas chicas.
+    # 6/6/25 Se cambió una pequeña cosa, por ahora lo mantengo.
     anuncios = []
     items = re.findall(r'<p>(.*?)</p>', body)
     if len(items) <= 4:
@@ -139,11 +140,11 @@ def parseResumenAnuncios(body):
                 link = None
             else:
                 titulo = re.search(r'<a(.*?)</a>', item).group()
-                link = [re.search(r'href="(.*?)/">', titulo).group()[5:-1]][0]
+                link = [re.search(r'href="(.*?)">', titulo).group()[5:-1]][0]
             titulo = stripHTML(titulo)
             if titulo[-1] == ":":
                 titulo = titulo[:-1]
-            bulletpoints = re.sub(r"<a(.*?)</a>", '', item).split("–")
+            bulletpoints = re.sub(r"<a(.*?)</a>", '', item).split("&#8211;")
             bulletpoints[0] = re.sub(r"<strong(.*?)</strong>", '', bulletpoints[0])
             bulletpoints[0] = re.sub(r"<a(.*?)</a>", '', bulletpoints[0])
             lineaItem.append(link)
@@ -179,7 +180,9 @@ def deleteReedicionesFromGroupImgs(lista, start):
 
 # Devuelve un array con todas las imgs de los mangas que salieron hoy
 def fetchGroupImgs(article):
-    return re.findall(r'src=\"(.*?)\"', article)
+    imgs = re.findall(r'src=\"(.*?)\"', article)
+    # Filtramos por imagenes que esten en el dominio de ivreality, así evitamos emojis
+    return [url for url in imgs if 'ivreality.com.ar' in url]
 
 
 # Para darle formato a las novedades, vamos a poner el título, link, y cada manga que sale en una lista
@@ -254,8 +257,6 @@ def formatResumenAnuncios(entry):
     if len(imagenes) == 1:
         tipo = "Photo"
         imagenes = imagenes[0]
-    elif len(imagenes) < len(contenido):
-        contenido = contenido[:len(imagenes)]
     listaFinal = {
         "tipo": tipo,
         "titulo": titulo,
