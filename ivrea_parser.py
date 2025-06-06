@@ -36,6 +36,10 @@ def fetchDatabaseLinks(titleData):
         else titleData[0]
     }
 
+    # Si el título incluye -EDICIÓN KANZENBAN- se lo sacamos
+    if "-EDICIÓN KANZENBAN-" in searchQuery["title"]:
+        searchQuery["title"] = searchQuery["title"].strip("-EDICIÓN KANZENBAN-")
+
     url = 'https://graphql.anilist.co'
 
     response = requests.post(url, json={'query': query, 'variables': searchQuery})
@@ -79,15 +83,17 @@ def parseTitlesNovedades(body):
 def parseTitlesSalioHoy(body):
     problema_impresion = []
     split_body = body.split("REEDICIONES")
+
     lanzamientos = re.findall(r'<h\d.class="wp-block-heading">(.*?)</h\d>', split_body[0])
     for item in range(len(lanzamientos)):
         lanzamientos[item] = stripHTML(lanzamientos[item])
-    try:
+
+    reediciones = None
+    if len(split_body) > 1:
         reediciones = re.findall(r'<h\d.class="wp-block-heading">(.*?)</h\d>', split_body[1])
         for item in range(len(reediciones)):
             reediciones[item] = stripHTML(reediciones[item])
-    except FileNotFoundError:
-        reediciones = None
+
     # Acá revisamos si hubo algún problema de impresión. En caso de haber más de uno se tendría que reimplementar esto
     if "Por problemas de imprenta" in body:
         problem = re.findall(r'>(.*?)</h\d>', body)[-1]

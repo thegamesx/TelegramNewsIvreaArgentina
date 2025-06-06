@@ -15,37 +15,42 @@ with open('conf.json', 'r') as jsonFile:
 intervalHours = conf['intervalHours']
 
 
+def sendNewEntries(entries):
+    errors = []
+    for index, article in enumerate(entries):
+        articleLinks = "\nLink: " + article.link + "\nID: " + article.id
+        try:
+            articleToSend = parseArticle(article)
+            sendPost(articleToSend["tipo"], articleToSend["mensaje"], articleToSend["media"])
+            logging.info("Se envió " + article.title + articleLinks)
+        except Exception as error:
+            msgError = ("Falló el envió de " + article.title + " El error fue el siguiente:\n" + repr(error) +
+                        articleLinks)
+            msgError = msgError.replace("&", "&amp;")
+            msgError = msgError.replace("<", "&lt;")
+            msgError = msgError.replace(">", "&gt;")
+            logging.error(msg=msgError)
+            # Mandar mensaje a un canal alternativo informando el error
+            sendPost("PhotoOrText", msgError, -1, True)
+            # Guardo el índice del artículo en el que hubo un error, asi puedo sacarlo de la lista luego del for
+            errors.append(index)
+    if errors:
+        # Elimino de la lista los artículos que no se enviaron
+        entries[:] = [entry for index, entry in enumerate(entries) if index not in errors]
+    saveEntries(entries)
+
+
 # Revisa si hay artículos nuevos. Si los hay los manda, y chequea que funcione correctamente
 def checkForNewAndSend():
-    newPosts = checkForNewEntries()
-    errors = []
-    if newPosts:
-        if "error" in newPosts.keys():
-            logging.error(newPosts["error"])
-        else:
-            for index, article in enumerate(newPosts):
-                articleLinks = "\nLink: " + article.link + "\nID: " + article.id
-                try:
-                    articleToSend = parseArticle(article)
-                    sendPost(articleToSend["tipo"], articleToSend["mensaje"], articleToSend["media"])
-                    logging.info("Se envió " + article.title + articleLinks)
-                except Exception as error:
-                    msgError = ("Falló el envió de " + article.title + " El error fue el siguiente:\n" + repr(error) +
-                                articleLinks)
-                    msgError = msgError.replace("&", "&amp;")
-                    msgError = msgError.replace("<","&lt;")
-                    msgError = msgError.replace(">", "&gt;")
-                    logging.error(msg=msgError)
-                    # Mandar mensaje a un canal alternativo informando el error
-                    sendPost("PhotoOrText", msgError, -1, True)
-                    # Guardo el índice del artículo en el que hubo un error, asi puedo sacarlo de la lista luego del for
-                    errors.append(index)
-            if errors:
-                # Elimino de la lista los artículos que no se enviaron
-                newPosts[:] = [entry for index, entry in enumerate(newPosts) if index not in errors]
-            saveEntries(newPosts)
+    result = checkForNewEntries()
+
+    if not result["success"]:
+        logging.error(result["error"])
     else:
-        logging.info("No hay nuevos artículos.")
+        if result["data"]:
+            sendNewEntries(result["data"])
+        else:
+            logging.info("No hay nuevos artículos.")
 
 
 schedule.every(intervalHours).hours.do(checkForNewAndSend)
