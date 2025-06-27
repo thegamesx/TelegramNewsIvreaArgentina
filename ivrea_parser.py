@@ -79,7 +79,7 @@ def parseTitlesNovedades(body):
     return titleList
 
 
-# Para recuperar los titulos que salieron hoy, solo vamos a concentrarnos en los titulos. (considerar los subs)
+# Para recuperar los títulos que salieron hoy, solo vamos a concentrarnos en los títulos. (considerar los subs)
 def parseTitlesSalioHoy(body):
     problema_impresion = []
     split_body = body.split("REEDICIONES")
@@ -94,10 +94,15 @@ def parseTitlesSalioHoy(body):
         for item in range(len(reediciones)):
             reediciones[item] = stripHTML(reediciones[item])
 
-    # Acá revisamos si hubo algún problema de impresión. En caso de haber más de uno se tendría que reimplementar esto
-    if "Por problemas de imprenta" in body:
+    # Acá revisamos si hubo algún problema de impresión. En caso de haber más de uno se tendría que reimplementar
+    # esto Como los nombres de los mangas están escritos en mayúsculas, no debería detecto eso si un manga tiene
+    # imprenta en su nombre
+    if "imprenta" in body:
         problem = re.findall(r'>(.*?)</h\d>', body)[-1]
         problema_impresion.append(stripHTML(problem))
+        # Sacamos el último item, si fue detectado como un manga
+        if "imprenta" in reediciones[-1]:
+            reediciones.pop()
     return [lanzamientos, reediciones, problema_impresion]
 
 
