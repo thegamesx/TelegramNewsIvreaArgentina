@@ -127,48 +127,6 @@ def parseOtro(body):
     return contenido
 
 
-def parseResumenAnuncios(body):
-    # 10/11/24: Se volvió a cambiar el formato. Esperemos que sea consistente, si no voy a discontinuar esta función
-    # y hacer algo más genérico.
-    # 4/4/25: El formato cambió ligeramente. Todavía estoy considerando si cambiarlo, pero por ahora solo fue acomodar
-    # un par de cosas chicas.
-    # 6/6/25 Se cambió una pequeña cosa, por ahora lo mantengo.
-    anuncios = []
-    items = re.findall(r'<p>(.*?)</p>', body)
-    if len(items) <= 4:
-        items = re.findall(r'<li>(.*?)</li>', body)
-        for item in items:
-            lineaItem = []
-            titulo = re.search(r'<a(.*?)</a>', item)
-            if not titulo:
-                titulo = re.search(r'<strong(.*?)</strong>', item).group()
-                link = None
-            else:
-                titulo = re.search(r'<a(.*?)</a>', item).group()
-                link = [re.search(r'href="(.*?)">', titulo).group()[5:-1]][0]
-            titulo = stripHTML(titulo)
-            if titulo[-1] == ":":
-                titulo = titulo[:-1]
-            bulletpoints = re.sub(r"<a(.*?)</a>", '', item).split("&#8211;")
-            bulletpoints[0] = re.sub(r"<strong(.*?)</strong>", '', bulletpoints[0])
-            bulletpoints[0] = re.sub(r"<a(.*?)</a>", '', bulletpoints[0])
-            lineaItem.append(link)
-            lineaItem.append(titulo)
-            for line in bulletpoints:
-                lineaItem.append(stripHTML(line))
-            anuncios.append(lineaItem)
-    else:
-        for item in items:
-            lineaItem = [re.search(r'href="(.*?)/">', item).group()[5:-1]]
-            bulletpoints = item.split("&#8211;")[1:]
-            bulletpoints.insert(1, bulletpoints[0].split("</strong>")[1])
-            bulletpoints[0] = bulletpoints[0].split("<")[0][:-1]
-            for line in bulletpoints:
-                lineaItem.append(stripHTML(line))
-            anuncios.append(lineaItem)
-    return anuncios
-
-
 def fetchImage(text):
     imageURL = re.findall(r'src=\"(.*?)\"', text)
     if imageURL:
@@ -253,25 +211,6 @@ def formatLanzamiento(entry):
     return listaFinal
 
 
-def formatResumenAnuncios(entry):
-    tipo = "GroupPhoto"  # Lo declaramos acá por las dudas
-    titulo = entry.title
-    link = entry.link
-    contenido = parseResumenAnuncios(entry.content[0]['value'])
-    imagenes = fetchGroupImgs(entry.content[0]['value'])
-    if len(imagenes) == 1:
-        tipo = "Photo"
-        imagenes = imagenes[0]
-    listaFinal = {
-        "tipo": tipo,
-        "titulo": titulo,
-        "link": link,
-        "media": imagenes,
-        "contenido": contenido
-    }
-    return listaFinal
-
-
 def formatOtro(entry):
     tipo = "PhotoOrText"
     titulo = entry.title
@@ -293,9 +232,7 @@ def checkTypeArticle(articulo):
         return "Novedades"
     elif "todo lo que sali" in articulo.title.casefold():
         return "SalioHoy"
-    #elif "resumen de" in articulo.title.casefold():
-    #    return "Resumen"
-    elif articulo.content[0]['value'].count("<br />") > 2:
+    elif articulo.content[0]['value'].count("<br />") > 2 and "a la venta" in articulo.content[0]['value'].lower():
         return "Lanzamiento"
     else:
         return "Otro"
