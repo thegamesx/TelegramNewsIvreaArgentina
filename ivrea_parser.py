@@ -228,7 +228,7 @@ def formatOtro(entry):
 
 
 def checkTypeArticle(articulo):
-    if "novedades del" in articulo.title.casefold():
+    if "novedades" in articulo.title.casefold():
         return "Novedades"
     elif "todo lo que sali" in articulo.title.casefold():
         return "SalioHoy"
