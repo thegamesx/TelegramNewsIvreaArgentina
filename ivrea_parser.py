@@ -63,9 +63,7 @@ def fetchDatabaseLinks(titleData):
 # En los artículos que muestran que salió hoy, rescatamos los títulos en forma de lista, con sus respectivos subtítulos
 def parseTitlesNovedades(body):
     titleList = []
-    parsedBody = re.findall(r'<li>(.*?)</li>', body)
-    if not parsedBody:
-        parsedBody = re.findall(r'<p>(.*?)</p>', body)
+    parsedBody = re.findall(r'<p[^>]*>(.*?)</p>', body)
     for x in range(len(parsedBody)):
         title = re.findall(r'<strong>(.*?)</strong>', parsedBody[x])
         if title:
@@ -84,13 +82,13 @@ def parseTitlesSalioHoy(body):
     problema_impresion = []
     split_body = body.split("REEDICIONES")
 
-    lanzamientos = re.findall(r'<h\d.class="wp-block-heading">(.*?)</h\d>', split_body[0])
+    lanzamientos = re.findall(r'<h\d[^>]*>(.*?)</h\d>', split_body[0])
     for item in range(len(lanzamientos)):
         lanzamientos[item] = stripHTML(lanzamientos[item])
 
     reediciones = None
     if len(split_body) > 1:
-        reediciones = re.findall(r'<h\d.class="wp-block-heading">(.*?)</h\d>', split_body[1])
+        reediciones = re.findall(r'<h\d[^>]*>(.*?)</h\d>', split_body[1])
         for item in range(len(reediciones)):
             reediciones[item] = stripHTML(reediciones[item])
 
@@ -98,7 +96,7 @@ def parseTitlesSalioHoy(body):
     # esto Como los nombres de los mangas están escritos en mayúsculas, no debería detecto eso si un manga tiene
     # imprenta en su nombre
     if "imprenta" in body:
-        problem = re.findall(r'>(.*?)</h\d>', body)[-1]
+        problem = re.findall(r'<h\d[^>]*>(.*?)</h\d>', body)[-1]
         problema_impresion.append(stripHTML(problem))
         # Sacamos el último item, si fue detectado como un manga
         if "imprenta" in reediciones[-1]:
@@ -107,7 +105,7 @@ def parseTitlesSalioHoy(body):
 
 
 def parseLanzamiento(body):
-    parrafos = re.findall(r'<p>(.*?)</p>', body)
+    parrafos = re.findall(r'<p[^>]*>(.*?)</p>', body)
     bulletpoints = parrafos[0].split("<br />")
     for x in range(len(bulletpoints)):
         bulletpoints[x] = stripHTML(bulletpoints[x])
