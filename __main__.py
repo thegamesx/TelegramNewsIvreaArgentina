@@ -42,7 +42,7 @@ def sendNewEntries(entries):
 
 # Revisa si hay artículos nuevos. Si los hay los manda, y chequea que funcione correctamente
 def checkForNewAndSend():
-    result = checkForNewEntries()
+    result = checkForNewEntries(debug=True if conf['debug'] == "True" else False)
 
     if not result["success"]:
         logging.error(result["error"])

@@ -1,4 +1,5 @@
 {
   "intervalHours": 1,
-  "numberOfReprints": 8
+  "numberOfReprints": 8,
+  "debug": "True"
 }

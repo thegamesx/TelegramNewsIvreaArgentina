@@ -6,6 +6,7 @@ import telegram
 import os
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder
+from telegram.error import RetryAfter
 import urllib.request
 
 # Cargo las credenciales a través de un archivo
@@ -80,19 +81,34 @@ def prepareMedia(mediaList, message=-1, download=False):
     return correctList
 
 
+# Reintenta en caso de error de Flood Control.
+async def retry_flood(func, *args, **kwargs):
+    while True:
+        try:
+            return await func(*args, **kwargs)
+
+        except RetryAfter as e:
+            logging.warning(
+                f"Flood control. Esperando {e.retry_after} segundos..."
+            )
+            await asyncio.sleep(e.retry_after)
+
+
 # Envia una foto con un caption. Se puede usar para lanzamientos, anuncios u otros que tengan una foto.
 async def sendPhoto(app, chat, msg, img):
     if len(msg) <= 1024:
         try:
-            await app.bot.sendPhoto(
+            await retry_flood(
+                app.bot.sendPhoto,
                 chat_id=chat,
                 photo=img,
                 caption=msg,
                 parse_mode=ParseMode.HTML
             )
-        except:
+        except telegram.error.BadRequest as error:
             downloadedImg = downloadMedia(img)
-            await app.bot.sendPhoto(
+            await retry_flood(
+                app.bot.sendPhoto,
                 chat_id=chat,
                 photo=downloadedImg,
                 caption=msg,
@@ -100,11 +116,13 @@ async def sendPhoto(app, chat, msg, img):
             )
             deleteTemp()
     else:
-        await app.bot.sendPhoto(
+        await retry_flood(
+            app.bot.sendPhoto,
             chat_id=chat,
             photo=img,
         )
-        await app.bot.sendMessage(
+        await retry_flood(
+            app.bot.sendMessage,
             chat_id=chat,
             disable_web_page_preview=True,
             text=msg,
@@ -116,15 +134,17 @@ async def sendPhoto(app, chat, msg, img):
 async def sendVideo(app, chat, msg, video):
     if len(msg) <= 1024:
         try:
-            await app.bot.sendVideo(
+            await retry_flood(
+                app.bot.sendVideo,
                 chat_id=chat,
                 video=video,
                 caption=msg,
                 parse_mode=ParseMode.HTML
             )
-        except:
+        except telegram.error.BadRequest as error:
             downloadedVideo = downloadMedia(video)
-            await app.bot.sendVideo(
+            await retry_flood(
+                app.bot.sendVideo,
                 chat_id=chat,
                 video=downloadedVideo,
                 caption=msg,
@@ -132,11 +152,13 @@ async def sendVideo(app, chat, msg, video):
             )
             deleteTemp()
     else:
-        await app.bot.sendVideo(
+        await retry_flood(
+            app.bot.sendVideo,
             chat_id=chat,
             video=video,
         )
-        await app.bot.sendMessage(
+        await retry_flood(
+            app.bot.sendMessage,
             chat_id=chat,
             disable_web_page_preview=True,
             text=msg,
@@ -148,7 +170,8 @@ async def sendVideo(app, chat, msg, video):
 # En caso contrario se manda un mensaje
 async def sendMessageOrPhoto(app, chat, msg, media):
     if media == -1:
-        await app.bot.sendMessage(
+        await retry_flood(
+            app.bot.sendMessage,
             chat_id=chat,
             text=msg,
             parse_mode=ParseMode.HTML
@@ -173,19 +196,21 @@ async def sendGroupPhoto(app, chat, msg, imgs):
             limit = len(correctImgs) % 10
         else:
             limit = 10
-        await app.bot.sendMediaGroup(
+        await retry_flood(
+            app.bot.sendMediaGroup,
             chat_id=chat,
             media=correctImgs[:limit],
         )
         correctImgs = correctImgs[limit:]
-        sleep(3)
     else:
-        await app.bot.sendMediaGroup(
+        await retry_flood(
+            app.bot.sendMediaGroup,
             chat_id=chat,
             media=correctImgs,
         )
     if len(msg) > 1024:
-        await app.bot.sendMessage(
+        await retry_flood(
+            app.bot.sendMessage,
             chat_id=chat,
             disable_web_page_preview=True,
             text=msg,

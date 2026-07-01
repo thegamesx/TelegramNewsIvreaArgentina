@@ -4,3 +4,6 @@
 /credentials.json.bak
 /.venv/
 /.temp/
+test.py
+feed_importer.py
+feed_prueba.xml

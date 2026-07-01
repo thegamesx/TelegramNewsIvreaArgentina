@@ -10,8 +10,11 @@ def isNonZeroFile(fpath):
 
 
 # Actualiza el feed para ver si hay artículos nuevos
-def loadFeed():
-    feed = feedparser.parse(url)
+def loadFeed(alt_url=None):
+    if alt_url:
+        feed = feedparser.parse(alt_url)
+    else:
+        feed = feedparser.parse(url)
     return feed.entries
 
 
@@ -64,8 +67,8 @@ def loadFile():
 
 
 # Este es la función principal, la cual va a devolver nuevas entradas (si las hay) para procesarlas luego
-def checkForNewEntries():
-    articles = loadFeed()
+def checkForNewEntries(debug=False):
+    articles = loadFeed(alt_url="feed_prueba.xml" if debug else None)
     if not articles:
         return {"success": False, "data": None,
                 "error": "El feed está vacío. La página está caída o hay un error en la conexión."}

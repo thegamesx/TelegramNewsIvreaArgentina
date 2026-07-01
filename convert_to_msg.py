@@ -9,7 +9,7 @@ def msgNovedades(title, link, content):
     msg += lineBreak + lineBreak
     # Inserta los títulos
     for manga in content:
-        if "(reedición)" in manga.casefold() or "(reediciones)" in manga.casefold():
+        if "(reedición)" in manga.casefold() or "(reediciones)" in manga.casefold() or "(reedicion)" in manga.casefold():
             emoji = "\U0001F504"  # Flechas circulares
             if not firstReedicion:
                 # Separamos las reediciones

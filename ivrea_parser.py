@@ -4,6 +4,7 @@ import convert_to_msg as convertMsg
 import requests
 import math
 import json
+from bs4 import BeautifulSoup
 
 
 # Cargo la configuración a través de un archivo
@@ -63,24 +64,68 @@ def fetchDatabaseLinks(titleData):
 # En los artículos que muestran que salió hoy, rescatamos los títulos en forma de lista, con sus respectivos subtítulos
 def parseTitlesNovedades(body):
     titleList = []
-    parsedBody = re.findall(r'<p[^>]*>(.*?)</p>', body)
-    for x in range(len(parsedBody)):
-        title = re.findall(r'<strong>(.*?)</strong>', parsedBody[x])
-        if title:
-            if type(title) is list:
-                title = title[0]
-            title = stripHTML(title)
-            title = title.replace("&#8221;", "\"")
-            if title[0] == "•":
-                title = title[2:]
-            titleList.append(title)
+    terminado = True
+
+    soup = BeautifulSoup(body, 'html.parser')
+
+    parsedBody = soup.find_all('p')
+    if parsedBody:
+        for paragraph in parsedBody:
+            items = paragraph.find_all("strong")
+            for item in items:
+                contenido = stripHTML(item.contents[0])
+
+                if contenido.lower() == "(reedicion)" or contenido.lower() == "(reedición)":
+                    titleList[-1] += " " + contenido
+                    continue
+
+                #Revisamos una excepción, en caso de que vaya a un nuevo título y no lo haya detectado
+                if contenido.startswith("•") and not terminado:
+                    terminado = True
+                    titleList.append(titulo[2:])
+
+                if not terminado:
+                    titulo += " " + contenido
+                else:
+                    titulo = contenido
+
+                if titulo and titulo.startswith("•"):
+                    #Necesitamos revisar si el titulo está completo o necesita incluir strings futuros
+                    terminado = False
+                    if "vol" in titulo.lower() and (titulo[-1].isdigit() or "reedición" in titulo.lower() or "reedicion" in titulo.lower()) and titulo.startswith("•"):
+                        terminado = True
+                        titleList.append(titulo[2:])
+
     return titleList
+
+
+
+    """
+    parsedBody = re.findall(r'<p[^>]*>(.*?)</p>', body)
+    if len(parsedBody) > 3:
+        titles = parsedBody
+    else:
+        titles = re.findall(r'<strong>(.*?)</strong>', parsedBody[0])
+    for title in titles:
+        if type(title) is list:
+            title = title[0]
+        title = stripHTML(title)
+        title = title.replace("&#8221;", "\"")
+        if title[0] == "•":
+            title = title[2:]
+            titleList.append(title)
+        else:
+            titleList[-1] += (" " + title)
+    return titleList
+    """
 
 
 # Para recuperar los títulos que salieron hoy, solo vamos a concentrarnos en los títulos. (considerar los subs)
 def parseTitlesSalioHoy(body):
     problema_impresion = []
     split_body = body.split("REEDICIONES")
+
+    soup = BeautifulSoup(body, 'html.parser')
 
     lanzamientos = re.findall(r'<h\d[^>]*>(.*?)</h\d>', split_body[0])
     for item in range(len(lanzamientos)):
@@ -95,11 +140,12 @@ def parseTitlesSalioHoy(body):
     # Acá revisamos si hubo algún problema de impresión. En caso de haber más de uno se tendría que reimplementar
     # esto Como los nombres de los mangas están escritos en mayúsculas, no debería detecto eso si un manga tiene
     # imprenta en su nombre
-    if "imprenta" in body:
-        problem = re.findall(r'<h\d[^>]*>(.*?)</h\d>', body)[-1]
-        problema_impresion.append(stripHTML(problem))
+    if "⛔" in body or "problemas de imprenta" in body.lower():
+        problem = soup.find(string=re.compile("problemas de imprenta", re.I))
+        if problem:
+            problema_impresion.append(problem.getText(strip=True))
         # Sacamos el último item, si fue detectado como un manga
-        if "imprenta" in reediciones[-1]:
+        if "problemas de imprenta" in reediciones[-1]:
             reediciones.pop()
     return [lanzamientos, reediciones, problema_impresion]
 
@@ -145,6 +191,10 @@ def fetchGroupImgs(article):
     # Filtramos por imagenes que esten en el dominio de ivreality, así evitamos emojis
     return [url for url in imgs if 'ivreality.com.ar' in url]
 
+def fetchImgsNovedades(article):
+    before_first_p = article.split('<p', 1)[0]
+    imgs = re.findall(r'src="([^"]+)"', before_first_p)
+    return [url for url in imgs if 'ivreality.com.ar' in url]
 
 # Para darle formato a las novedades, vamos a poner el título, link, y cada manga que sale en una lista
 def formatNovedades(entry):
@@ -152,15 +202,7 @@ def formatNovedades(entry):
     titulo = entry.title
     link = entry.link
     contenido = parseTitlesNovedades(entry.content[0]['value'])
-    imagen = fetchGroupImgs(entry.content[0]['value'])
-    # Puede que hayan multiples imágenes. En ese caso vemos si son más de una (ignorando reediciones) y categorizamos
-    # el post según corresponda
-    reediciones = 0
-    for item in contenido:
-        if "(reedición)" in item.casefold() or "(reediciones)" in item.casefold():
-            reediciones += 1
-    if len(imagen) > 1 and reediciones > 0:
-        imagen = imagen[:-int(math.ceil(reediciones/numberOfReprints))]
+    imagen = fetchImgsNovedades(entry.content[0]['value'])
     if len(imagen) == 1:
         imagen = imagen[0]
     else:
