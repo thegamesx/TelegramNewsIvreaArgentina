@@ -11,11 +11,26 @@ def isNonZeroFile(fpath):
 
 # Actualiza el feed para ver si hay artículos nuevos
 def loadFeed(alt_url=None):
-    if alt_url:
-        feed = feedparser.parse(alt_url)
-    else:
-        feed = feedparser.parse(url)
-    return feed.entries
+    feed_url = alt_url or url
+
+    try:
+        feed = feedparser.parse(feed_url)
+
+        if getattr(feed, "bozo", False):
+            print(feed.bozo_exception)
+
+        return {
+            "success": True,
+            "entries": feed.entries,
+            "error": None
+        }
+
+    except (OSError, socket.error) as e:
+        return {
+            "success": False,
+            "entries": [],
+            "error": str(e)
+        }
 
 
 def getArticlesID(articles):
@@ -68,10 +83,16 @@ def loadFile():
 
 # Este es la función principal, la cual va a devolver nuevas entradas (si las hay) para procesarlas luego
 def checkForNewEntries(debug=False):
-    articles = loadFeed(alt_url="feed_prueba.xml" if debug else None)
-    if not articles:
-        return {"success": False, "data": None,
-                "error": "El feed está vacío. La página está caída o hay un error en la conexión."}
+    result = loadFeed(alt_url="feed_prueba.xml" if debug else None)
+
+    if not result["success"]:
+        return {
+            "success": False,
+            "data": None,
+            "error": result["error"]
+        }
+
+    articles = result["entries"]
 
     currentEntries = getArticlesID(articles)
     savedEntries = loadFile()
